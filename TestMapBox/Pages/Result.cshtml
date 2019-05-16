@@ -1,0 +1,78 @@
+﻿@page
+@model TestMapBox.Pages.ResultModel
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Результаты</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
+    <link href='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css' rel='stylesheet' />
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.9/mapbox-gl-draw.css' type='text/css' />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #info {
+            display: block;
+            position: relative;
+            margin: 0px auto;
+            width: 50%;
+            padding: 10px;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            text-align: center;
+            color: #222;
+            background: #fff;
+        }
+
+        .form-submit-button {
+            background: #0066A2;
+            color: white;
+            border-style: outset;
+            border-color: #0066A2;
+            height: 50px;
+            width: 100px;
+            font: bold 15px arial, sans-serif;
+            text-shadow: none;
+        }
+
+        .inputClass {
+            border: 1px solid #9E9E9E;
+            color: #000000;
+            padding: 3px;
+            margin-top: 2px;
+            margin-bottom: 2px;
+            font-size: 11px;
+            font-family: Verdana;
+            background: #FFF;
+        }
+    </style>
+
+</head>
+<body>
+<div id='map'></div>
+<script src='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.js'></script>
+<script src="https://cdn.jsdelivr.net/npm/places.js@1.4.15"></script>
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.9/mapbox-gl-draw.js'></script>
+<script>
+    mapboxgl.accessToken = '@Model.MapboxAccessToken';
+    var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v11',
+        zoom: 1.5
+    });
+</script>
+</body>
+</html>
