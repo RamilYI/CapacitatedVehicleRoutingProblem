@@ -48,6 +48,16 @@ namespace TestMapBox.SolutionClasses
             return false;
         }
 
+        public Vehicle[] GetVehicles()
+        {
+            return Vehicles;
+        }
+
+        public double GetCost()
+        {
+            return Cost;
+        }
+
         public void GreedySolution(Customer[] customers, double[,] distanceMatrix)
         {
             double endCost;
@@ -164,15 +174,6 @@ namespace TestMapBox.SolutionClasses
                                         double addedCost3 = distanceMatrix[RouteFrom[i].CustomerId,
                                             RouteTo[j + 1].CustomerId];
 
-                                        /* double MinusCost1 = CostMatrix[RouteFrom.get(i - 1).NodeId][RouteFrom.get(i).NodeId];
-                                           double MinusCost2 = CostMatrix[RouteFrom.get(i).NodeId][RouteFrom.get(i + 1).NodeId];
-                                           double MinusCost3 = CostMatrix[RouteTo.get(j).NodeId][RouteTo.get(j + 1).NodeId];
-                                           
-                                           double
-                                           AddedCost1 = CostMatrix[RouteFrom.get(i - 1).NodeId][RouteFrom.get(i + 1).NodeId];
-                                           double AddedCost2 = CostMatrix[RouteTo.get(j).NodeId][RouteFrom.get(i).NodeId];
-                                           double AddedCost3 = CostMatrix[RouteFrom.get(i).NodeId][RouteTo.get(j + 1).NodeId];*/
-
                                         if ((tabuMatrix[RouteFrom[i - 1].CustomerId, RouteFrom[i + 1].CustomerId] != 0)
                                             || (tabuMatrix[RouteTo[j].CustomerId, RouteFrom[i].CustomerId] != 0)
                                             || (tabuMatrix[RouteFrom[i].CustomerId, RouteTo[j + 1].CustomerId] != 0))
@@ -253,7 +254,7 @@ namespace TestMapBox.SolutionClasses
             this.Cost = BestSolutionCost;
         }
 
-public void SaveBestSolution()
+        public void SaveBestSolution()
         {
             BestSolutionCost = Cost;
 
@@ -275,7 +276,6 @@ public void SaveBestSolution()
 
         public void PrintSolution()
         {
-            //string path =  + "\\Results.txt";
             StringBuilder text = new StringBuilder();
             for (var j = 0; j < NoOfVehicles; j++)
             {

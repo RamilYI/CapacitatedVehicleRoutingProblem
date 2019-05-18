@@ -6,9 +6,10 @@
     <meta charset='utf-8' />
     <title>Airport Explorer</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
     <link href='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css' rel='stylesheet' />
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.9/mapbox-gl-draw.css' type='text/css' />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.css' type='text/css' />
 
     <style>
         body {
@@ -58,144 +59,171 @@
             font-family: Verdana;
             background: #FFF;
         }
+
+        .topcorner {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+        }
     </style>
 </head>
 <body>
-<pre id='info'></pre>
     <div id='map'></div>
-    <div class="absolute pin-t pin-r w-1/5 mt-4 mr-4">
-        <form asp-page-handler="PrimaryData" method="post">
-            <input type="search" id="address-input" placeholder="Search..." />
-            <br />
-            <br />
-            <label>Количество грузовиков:</label>
-            <br />
-            <input class="inputClass" asp-for="PrimaryData.NumberVehicles">
-            <br />
-            <br />
-            <label>Вместимость грузовиков:</label>
-            <br />
-            <input class="inputClass" asp-for="PrimaryData.MaxVehicle">
-            <br />
-            <br />
-            <label>Максимальный спрос клиентов:</label>
-            <br />
-            <input class="inputClass" asp-for="PrimaryData.NumberDemand">
-            <br /><br />
-            <br /><br />
-            <input type="submit" class="form-submit-button" value="Расчёт" onclick="sendJson(jsonObj)" />
-        </form>
+    <div class="topcorner">
+        <input type="search" class="" id="address-input" placeholder="Search..." />
+        <br />
+        <br />
+        <label>Количество грузовиков:</label>
+        <br />
+        <input class="inputClass" id="vehicleCount">
+        <br />
+        <br />
+        <label>Вместимость грузовиков:</label>
+        <br />
+        <input class="inputClass" id="maxVehicle">
+        <br />
+        <br />
+        <label>Максимальный спрос клиентов:</label>
+        <br />
+        <input class="inputClass" id="maxDemand">
+        <br /><br />
+        <br /><br />
+        <input type="button" class="form-submit-button" value="Расчёт" id="sendButton" />
+        <br /><br />
+        <input type="button" value="Обновить страницу" onclick="window.location.reload();" />
+        <br /><br />
+        <label id="Cost"></label>
     </div>
     <script src='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/places.js@1.4.15"></script>
-    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.0.3.min.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
-    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.9/mapbox-gl-draw.js'></script>
+    <script src="~/lib/signalr/dist/browser/signalr.js"></script>
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.min.js'></script>
+
     <script>
     mapboxgl.accessToken = '@Model.MapboxAccessToken';
     var map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v11',
-        zoom: 1.5
+        zoom: 1
     });
-    //function ajaxTest() {
-    //    console.log("Entered method");
-    //    $.ajax({
-    //        type: "POST",
-    //        url: '', // <-- Where should this point?
-    //        contentType: "application/json; charset=utf-8",
-    //        dataType: "json",
-    //        data: jsonObj,
-    //        error: function (xhr, status, errorThrown) {
-    //            var err = "Status: " + status + " " + errorThrown;
-    //            console.log(err);
-    //        }
-    //    }).done(function (data) {
-    //        console.log(data.result);
-    //    })
-    //}
-
+    var geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+    });
+    var newArr = [];
+    var coordsbetweencoords = {};
     var count = 0;
-    var jsonNew = Array();
-    var Draw = new MapboxDraw();
-//    map.addControl(Draw, 'top-left');
+    var nav = new mapboxgl.NavigationControl();
+    var jsonObj = {};
+    var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+        '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
+        '#80B300', '#809900', '#E6B3B3', '#6680B3', '#66991A',
+        '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC',
+        '#66994D', '#B366CC', '#4D8000', '#B33300', '#CC80CC',
+        '#66664D', '#991AFF', '#E666FF', '#4DB3FF', '#1AB399',
+        '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
+        '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
+        '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
+        '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'];
+    var coordinates = [];
+    var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 
-//    map.on('draw.create', updateArea);
-//    map.on('draw.delete', updateArea);
-//    map.on('draw.update', updateArea);
+    document.getElementById("sendButton").disabled = true;
 
-//    function updateArea(e) {
-//        var data = draw.getAll();
-//        var answer = document.getElementById('calculated-area');
-//        if (data.features.length > 0) {
-//            var area = turf.area(data);
-//// restrict to area to 2 decimal points
-//            var rounded_area = Math.round(area*100)/100;
-//            answer.innerHTML = '<p><strong>' + rounded_area + '</strong></p><p>square meters</p>';
-//        } else {
-//            answer.innerHTML = '';
-//            if (e.type !== 'draw.delete') alert("Use the draw tools to draw a polygon!");
-//        }
-//    }
+    document.getElementById("sendButton").addEventListener("click", function (event) {
+        var vehicle = document.getElementById("vehicleCount").value;
+        var maxVehicle = document.getElementById("maxVehicle").value;
+        var maxDemand = document.getElementById("maxDemand").value;
+        var jsonSend = JSON.stringify(jsonObj).toString();
+        var distanceSend = newArr.toString(); 
+        connection.invoke("SendMessage", vehicle, maxVehicle, maxDemand, jsonSend, distanceSend).catch(function (err) {
+            return console.error(err.toString());
+        });
+        event.preventDefault();
+    });
 
-    //function newFunc(content, fileName, contentType) {
-    //    var b = document.createElement("b");
-    //    var file = new Blob([content], {type: contentType});
-    //    b.href = URL.createObjectURL(file);
-    //    b.download = fileName;
-    //    b.click();
-    //}
+    function getMatchAll() {
+        for (var i = 0; i < Object.keys(jsonObj).length; i++) {
+            for (var j = 0; j < Object.keys(jsonObj).length; j++) {
+                var v = i * Object.keys(jsonObj).length + j;
+                getMatch(i, j, v);
+            }
+        }
+    }
 
-    $
-    var sendJson = function(obj) {
-        $.ajax({
-            type: "POST",
-            url:'@Url.Action("FirstAjax", "AjaxTest")',
-            datatype: "json",
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify(obj),
-            success: function (data, status, request) {
-                if (data.Error != undefined) {
-                    console.log("System Error: " + data.Error);
+    function getMatch(e, q, v) {
+        var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + jsonObj[e].lng + ',' + jsonObj[e].lat
+            + ';' + jsonObj[q].lng + ',' + jsonObj[q].lat
+            + '?geometries=geojson&steps=true&access_token=' + mapboxgl.accessToken;
+        console.log(url);
+        var req = new XMLHttpRequest();
+        req.responseType = 'json';
+        req.open('GET', url, true);
+        req.onload  = function() {
+            var jsonResponse = req.response;
+            var distance = jsonResponse.routes[0].distance;
+            var duration = jsonResponse.routes[0].duration/60;
+            var steps = jsonResponse.routes[0].legs[0].steps;
+            var coords = jsonResponse.routes[0].geometry;
+            console.log(steps);
+            console.log(coords);
+            console.log(distance);
+            console.log(duration);
+            newArr[v] = distance;
+            coordsbetweencoords[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = coords;
+        };
+        req.send();
+    }
 
-                    return;
+    connection.on("ReceiveMessage", function (jsonResult, cost) {
+            coordinates = JSON.parse(jsonResult);
+            for (var i = 0; i < coordinates.length; i++) {
+                var buf = new Array();
+                var cccount = 0;
+                for (var k = 0; k < coordinates[i].length - 2; k += 2) {
+                    buf[cccount] = [coordinates[i][k], coordinates[i][k + 1]];
+                    cccount++;
+                    var coordCount =
+                        coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
+                            .length;
+                    for (var z = 0; z < coordCount; z++) {
+                        buf[cccount] = coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates[z];
+                        cccount += 1;
+                        }
                 }
-                console.log("Success");
-                localStorage.setItem("dataCache", data);
-
+                
+        map.addLayer({
+            "id": (i+20).toString(),
+            "type": "line",
+            "source": {
+                "type": "geojson",
+                "data": {
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": buf
+                    }
+                }
             },
-            error: function (request, status, error) {
-                console.log("ERROR");
+            "layout": {
+                "line-join": "round",
+                "line-cap": "round"
+            },
+            "paint": {
+                "line-color": colorArray[i],
+                "line-width": 8
             }
         });
-    }
-
-
-    var saveJson = function (obj) {
-        var data = JSON.stringify(obj);
-        //var data = encode( str );
-
-        var blob = new Blob( [ data ], {
-            type: 'application/octet-stream'
+            }
+            document.getElementById("Cost").textContent = "Cost: " + cost;
         });
 
-        var url = URL.createObjectURL( blob );
-        var link = document.createElement( 'a' );
-        link.setAttribute( 'href', url );
-        link.setAttribute( 'download', 'data.json' );
-        var event = document.createEvent( 'MouseEvents' );
-        event.initMouseEvent( 'click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
-        link.dispatchEvent( event );
-    }
-
-
-    //var encode = function( s ) {
-    //    var out = [];
-    //    for ( var i = 0; i < s.length; i++ ) {
-    //        out[i] = s.charCodeAt(i);
-    //    }
-    //    return new Uint8Array( out );
-    //}
+    connection.start().then(function(){
+        document.getElementById("sendButton").disabled = false;
+    }).catch(function (err) {
+        return console.error(err.toString());
+    });
 
     var placesAutocomplete = places({
         container: document.querySelector('#address-input'),
@@ -209,165 +237,10 @@
             });
         });
 
-    var nav = new mapboxgl.NavigationControl();
     map.addControl(nav, 'bottom-right');
-
-//    // San Francisco
-//    var origin = [-122.414, 37.776];
-
-//// Washington DC
-//    var destination = [-77.032, 38.913];
-
-//    var route = {
-//        "type": "FeatureCollection",
-//        "features": [{
-//            "type": "Feature",
-//            "geometry": {
-//                "type": "LineString",
-//                "coordinates": [
-//                    origin,
-//                    destination
-//                ]
-//            }
-//        }]
-//    };
-
-    var jsonObj = {};
 
     map.on('load',
         () => {
-            //map.addSource("airports",
-            //    {
-            //        type: "geojson",
-            //        data: "?handler=airports",
-            //        cluster: true,
-            //        clusterRadius: 50,
-            //        clusterMaxZoom: 6
-            //    });
-
-            //map.addLayer({
-            //    id: 'clusters',
-            //    type: 'circle',
-            //    source: 'airports',
-            //    paint: {
-            //        'circle-color': {
-            //            property: 'point_count',
-            //            type: 'interval',
-            //            stops: [
-            //                [0, '#41A337'],
-            //                [100, '#2D7026'],
-            //                [750, '#0B5703']
-            //            ]
-            //        },
-            //        'circle-radius': {
-            //            property: 'point_count',
-            //            type: 'interval',
-            //            stops: [
-            //                [0, 20],
-            //                [100, 30],
-            //                [750, 40]
-            //            ]
-            //        }
-            //    }
-            //});
-
-            //map.addLayer({
-            //    id: 'cluster-count',
-            //    type: 'symbol',
-            //    source: 'airports',
-            //    filter: ['has', 'point_count'],
-            //    layout: {
-            //        'text-field': '{point_count}',
-            //        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-            //        'text-size': 12
-            //    }
-            //});
-            //////map.addSource('route', {
-            //////    "type": "geojson",
-            //////    "data": route
-            //////});
-
-            //////map.addLayer({
-            //////    "id": "route",
-            //////    "source": "route",
-            //////    "type": "line",
-            //////    "paint": {
-            //////        "line-width": 2,
-            //////        "line-color": "#007cbf"
-            //////    }
-            //////});
-            //var popup = new mapboxgl.Popup({
-            //    closeButton: false,
-            //    closeOnClick: false
-            //});
-
-            //map.on('mouseenter',
-            //    'airport',
-            //    function (e) {
-            //        // Change the cursor style as a UI indicator.
-            //        map.getCanvas().style.cursor = 'pointer';
-
-            //        // Populate the popup and set its coordinates
-            //        // based on the feature found.
-            //        popup.setLngLat(e.features[0].geometry.coordinates)
-            //            .setHTML(e.features[0].properties.name)
-            //            .addTo(map);
-            //    });
-
-            //map.on('mouseleave',
-            //    'airport',
-            //    function () {
-            //        map.getCanvas().style.cursor = '';
-            //        popup.remove();
-            //    });
-
-                //map.addLayer({
-                //    "id": "route",
-                //    "type": "line",
-                //    "source": {
-                //        "type": "geojson",
-                //        "data": {
-                //            "type": "Feature",
-                //            "properties": {},
-                //            "geometry": {
-                //                "type": "LineString",
-                //                "coordinates": [
-                //                    [-122.48369693756104, 37.83381888486939],
-                //                    [-122.48348236083984, 37.83317489144141],
-                //                    [-122.48339653015138, 37.83270036637107],
-                //                    [-122.48356819152832, 37.832056363179625],
-                //                    [-122.48404026031496, 37.83114119107971],
-                //                    [-122.48404026031496, 37.83049717427869],
-                //                    [-122.48348236083984, 37.829920943955045],
-                //                    [-122.48356819152832, 37.82954808664175],
-                //                    [-122.48507022857666, 37.82944639795659],
-                //                    [-122.48610019683838, 37.82880236636284],
-                //                    [-122.48695850372314, 37.82931081282506],
-                //                    [-122.48700141906738, 37.83080223556934],
-                //                    [-122.48751640319824, 37.83168351665737],
-                //                    [-122.48803138732912, 37.832158048267786],
-                //                    [-122.48888969421387, 37.83297152392784],
-                //                    [-122.48987674713133, 37.83263257682617],
-                //                    [-122.49043464660643, 37.832937629287755],
-                //                    [-122.49125003814696, 37.832429207817725],
-                //                    [-122.49163627624512, 37.832564787218985],
-                //                    [-122.49223709106445, 37.83337825839438],
-                //                    [-122.49378204345702, 37.83368330777276]
-                //                ]
-                //            }
-                //        }
-                //    },
-                //    "layout": {
-                //        "line-join": "round",
-                //        "line-cap": "round"
-                //    },
-                //    "paint": {
-                //        "line-color": "#888",
-                //        "line-width": 8
-                //    }
-                //});
-
-
             map.on('click',
                 function (e) {
                     var marker;
@@ -376,31 +249,10 @@
                     } else {
                         marker = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
                     }
-                    count++;
                     jsonObj[count] = e.lngLat;
+                    count++;
                     console.log(jsonObj);
-
-                    //for (var key in jsonObj) {
-                    //    if (jsonObj.hasOwnProperty(key)) {
-                    //        jsonNew.push(jsonObj[key] + '\n');
-                    //    }
-                    //}
-                    //saveJson(jsonObj);
-                    //newFunc(jsonNew, "json1.json", "application/json");
-                    //$.ajax({
-                    //    type: "POST",
-                    //    data: jsonObj,
-                    //    url: "../home/save",
-                    //    contentType: "application/json"
-                    //}).done(function(res) {
-                    //    console.log('res', res);
-                    //});
-                    //$.post('/About',
-                    //    jsonObj,
-                    //    function(res) {
-                    //        console.log('res', res);
-                    //    });
-                    //document.getElementById('Coordinate_LngLat').innerHTML = JSON.stringify(e.lngLat.position);
+                    getMatchAll(); // срочно переделать, сильно замедляет
                 });
         });
     </script>
