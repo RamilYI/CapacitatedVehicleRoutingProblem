@@ -4,7 +4,7 @@
 <html>
 <head>
     <meta charset='utf-8' />
-    <title>Airport Explorer</title>
+    <title>CVRP</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <link href='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css' rel='stylesheet' />
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.9/mapbox-gl-draw.css' type='text/css' />
@@ -99,7 +99,6 @@
     <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
     <script src="~/lib/signalr/dist/browser/signalr.js"></script>
     <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.min.js'></script>
-
     <script>
     mapboxgl.accessToken = '@Model.MapboxAccessToken';
     var map = new mapboxgl.Map({
@@ -127,6 +126,8 @@
         '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'];
     var coordinates = [];
     var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+    var marker = [];
+    var layerNames = [];
 
     document.getElementById("sendButton").disabled = true;
 
@@ -143,9 +144,11 @@
     });
 
     function getMatchAll() {
+        
         for (var i = 0; i < Object.keys(jsonObj).length; i++) {
             for (var j = 0; j < Object.keys(jsonObj).length; j++) {
                 var v = i * Object.keys(jsonObj).length + j;
+                //if (newArr[v] == undefined)
                 getMatch(i, j, v);
             }
         }
@@ -175,13 +178,42 @@
         req.send();
     }
 
+    connection.start().then(function(){
+        document.getElementById("sendButton").disabled = false;
+    }).catch(function (err) {
+        return console.error(err.toString());
+    });
+
+    function clearLayers() {
+        for (var i = 0; i < layerNames.length; i++) {
+            try {
+                map.removeLayer(i.toString());
+                map.removeSource(i.toString());
+            }
+            catch(err){}
+        }
+    }
+
     connection.on("ReceiveMessage", function (jsonResult, cost) {
+            clearLayers();
             coordinates = JSON.parse(jsonResult);
             for (var i = 0; i < coordinates.length; i++) {
                 var buf = new Array();
                 var cccount = 0;
+                var count2 = 0;
                 for (var k = 0; k < coordinates[i].length - 2; k += 2) {
                     buf[cccount] = [coordinates[i][k], coordinates[i][k + 1]];
+                    count2++;
+                    //for (var mrkr = 0; mrkr < marker.length; mrkr++) {
+                    //    if (marker[mrkr]._lngLat.lng === coordinates[i][k]) marker[mrkr]._element.innerHTML = count2;
+                    //}
+                    var el = document.createElement('div');
+                    el.className = 'marker';
+                    el.innerHTML = '<span><b>' + count2 + '</b></span>';
+                    el.color = 'blue';
+                    k = marker.find(element => element._lngLat.lat === coordinates[i][k + 1] &&
+                        element._lngLat.lng === coordinates[i][k]);
+                    k = new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map);
                     cccount++;
                     var coordCount =
                         coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
@@ -191,39 +223,33 @@
                         cccount += 1;
                         }
                 }
-                
-        map.addLayer({
-            "id": (i+20).toString(),
-            "type": "line",
-            "source": {
-                "type": "geojson",
-                "data": {
-                    "type": "Feature",
-                    "properties": {},
-                    "geometry": {
-                        "type": "LineString",
-                        "coordinates": buf
+                layerNames[i] = i;
+                map.addLayer({
+                    "id": layerNames[i].toString(),
+                    "type": "line",
+                    "source": {
+                        "type": "geojson",
+                        "data": {
+                            "type": "Feature",
+                            "properties": {},
+                            "geometry": {
+                                "type": "LineString",
+                                "coordinates": buf
+                            }
+                        }
+                    },
+                    "layout": {
+                        "line-join": "round",
+                        "line-cap": "round"
+                    },
+                    "paint": {
+                        "line-color": colorArray[i],
+                        "line-width": 8
                     }
-                }
-            },
-            "layout": {
-                "line-join": "round",
-                "line-cap": "round"
-            },
-            "paint": {
-                "line-color": colorArray[i],
-                "line-width": 8
-            }
-        });
+                });
             }
             document.getElementById("Cost").textContent = "Cost: " + cost;
         });
-
-    connection.start().then(function(){
-        document.getElementById("sendButton").disabled = false;
-    }).catch(function (err) {
-        return console.error(err.toString());
-    });
 
     var placesAutocomplete = places({
         container: document.querySelector('#address-input'),
@@ -243,11 +269,11 @@
         () => {
             map.on('click',
                 function (e) {
-                    var marker;
+                    //var marker;
                     if (count === 0) {
-                        marker = new window.mapboxgl.Marker({color: 'red'}).setLngLat(e.lngLat).addTo(map);
+                        marker[count] = new window.mapboxgl.Marker({color: 'red'}).setLngLat(e.lngLat).addTo(map);
                     } else {
-                        marker = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
+                        marker[count] = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
                     }
                     jsonObj[count] = e.lngLat;
                     count++;

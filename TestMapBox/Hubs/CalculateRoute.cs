@@ -31,7 +31,7 @@ namespace TestMapBox.Hubs
             var distanceMatrix = new double[coordinates.Count, coordinates.Count];
             CalcDistancies(coordinates, distanceMatrix, distanceSend);
             s.GreedySolution(customers, distanceMatrix);
-            s.TabuSearch(10, distanceMatrix);
+            //s.TabuSearch(10, distanceMatrix);
             var coordinatearrays = new List<List<double>>();
             var vehicles = s.GetVehicles();
             for (var j = 0; j < vehicles.Length; j++)
