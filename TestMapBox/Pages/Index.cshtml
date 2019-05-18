@@ -207,13 +207,13 @@
                     //for (var mrkr = 0; mrkr < marker.length; mrkr++) {
                     //    if (marker[mrkr]._lngLat.lng === coordinates[i][k]) marker[mrkr]._element.innerHTML = count2;
                     //}
-                    var el = document.createElement('div');
-                    el.className = 'marker';
-                    el.innerHTML = '<span><b>' + count2 + '</b></span>';
-                    el.color = 'blue';
-                    k = marker.find(element => element._lngLat.lat === coordinates[i][k + 1] &&
-                        element._lngLat.lng === coordinates[i][k]);
-                    k = new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map);
+                    //var el = document.createElement('div');
+                    //el.className = 'marker';
+                    //el.innerHTML = '<span><b>' + count2 + '</b></span>';
+                    //el.color = 'blue';
+                    //k = marker.find(element => element._lngLat.lat === coordinates[i][k + 1] &&
+                    //    element._lngLat.lng === coordinates[i][k]);
+                    //k = new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map);
                     cccount++;
                     var coordCount =
                         coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
