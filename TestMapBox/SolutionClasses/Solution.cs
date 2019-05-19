@@ -41,7 +41,7 @@ namespace TestMapBox.SolutionClasses
 
         public bool CheckCustomers(Customer[] customers)
         {
-            for (var i = 0; i < customers.Length; i++)
+            for (var i = 1; i < customers.Length; i++)
                 if (!customers[i].IsRouted)
                     return true;
 
@@ -71,7 +71,7 @@ namespace TestMapBox.SolutionClasses
 
                 if (Vehicles[vehicleIndex].Route.Count == 0) Vehicles[vehicleIndex].AddNode(customers[0]);
 
-                for (var i = 0; i < NoOfCustomers; i++)
+                for (var i = 1; i < NoOfCustomers; i++)
                     if (customers[i].IsRouted == false)
                         if (Vehicles[vehicleIndex].CheckIfFits(customers[i].Demand))
                         {

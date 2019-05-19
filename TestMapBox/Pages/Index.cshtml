@@ -10,7 +10,9 @@
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.9/mapbox-gl-draw.css' type='text/css' />
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.css' type='text/css' />
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
     <style>
         body {
             margin: 0;
@@ -99,7 +101,16 @@
     <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
     <script src="~/lib/signalr/dist/browser/signalr.js"></script>
     <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.min.js'></script>
-    <script>
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+        integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+        crossorigin=""></script>
+<script>
+    @*L.accessToken = '@Model.MapboxAccessToken';
+    var map = new L.mapbox.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v11',
+        zoom: 1
+    });*@
     mapboxgl.accessToken = '@Model.MapboxAccessToken';
     var map = new mapboxgl.Map({
         container: 'map',
@@ -192,64 +203,60 @@
             }
             catch(err){}
         }
+        if (marker.length > 0) {
+        marker.forEach((m) => m.remove());
+            marker = [];
+        }
     }
 
     connection.on("ReceiveMessage", function (jsonResult, cost) {
-            clearLayers();
-            coordinates = JSON.parse(jsonResult);
-            for (var i = 0; i < coordinates.length; i++) {
-                var buf = new Array();
-                var cccount = 0;
-                var count2 = 0;
-                for (var k = 0; k < coordinates[i].length - 2; k += 2) {
-                    buf[cccount] = [coordinates[i][k], coordinates[i][k + 1]];
-                    count2++;
-                    //for (var mrkr = 0; mrkr < marker.length; mrkr++) {
-                    //    if (marker[mrkr]._lngLat.lng === coordinates[i][k]) marker[mrkr]._element.innerHTML = count2;
-                    //}
-                    //var el = document.createElement('div');
-                    //el.className = 'marker';
-                    //el.innerHTML = '<span><b>' + count2 + '</b></span>';
-                    //el.color = 'blue';
-                    //k = marker.find(element => element._lngLat.lat === coordinates[i][k + 1] &&
-                    //    element._lngLat.lng === coordinates[i][k]);
-                    //k = new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map);
-                    cccount++;
-                    var coordCount =
-                        coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
-                            .length;
-                    for (var z = 0; z < coordCount; z++) {
-                        buf[cccount] = coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates[z];
-                        cccount += 1;
-                        }
+        clearLayers();
+        coordinates = JSON.parse(jsonResult);
+        for (var i = 0; i < coordinates.length; i++) {
+            var buf = new Array();
+            var cccount = 0;
+            var count2 = 0;
+            for (var k = 0; k < coordinates[i].length - 2; k += 2) {
+                buf[cccount] = [coordinates[i][k], coordinates[i][k + 1]];
+                count2++;
+                var el = document.createElement('div'); el.className = 'marker';
+                el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + count2 + '</b></span>';
+                el.fontSize = "large";
+                marker.push(new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));
+                cccount++;
+                var coordCount = coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates.length;
+                for (var z = 0; z < coordCount; z++) {
+                    buf[cccount] = coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates[z];
+                    cccount += 1;
                 }
-                layerNames[i] = i;
-                map.addLayer({
-                    "id": layerNames[i].toString(),
-                    "type": "line",
-                    "source": {
-                        "type": "geojson",
-                        "data": {
-                            "type": "Feature",
-                            "properties": {},
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": buf
-                            }
-                        }
-                    },
-                    "layout": {
-                        "line-join": "round",
-                        "line-cap": "round"
-                    },
-                    "paint": {
-                        "line-color": colorArray[i],
-                        "line-width": 8
-                    }
-                });
             }
-            document.getElementById("Cost").textContent = "Cost: " + cost;
-        });
+            layerNames[i] = i;
+            map.addLayer({
+                "id": layerNames[i].toString(),
+                "type": "line",
+                "source": {
+                    "type": "geojson",
+                    "data": {
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": {
+                            "type": "LineString",
+                            "coordinates": buf
+                        }
+                    }
+                },
+                "layout": {
+                    "line-join": "round",
+                    "line-cap": "round"
+                },
+                "paint": {
+                    "line-color": colorArray[i],
+                    "line-width": 8
+                }
+            });
+        }
+        document.getElementById("Cost").textContent = "Cost: " + cost;
+    });
 
     var placesAutocomplete = places({
         container: document.querySelector('#address-input'),
@@ -271,9 +278,9 @@
                 function (e) {
                     //var marker;
                     if (count === 0) {
-                        marker[count] = new window.mapboxgl.Marker({color: 'red'}).setLngLat(e.lngLat).addTo(map);
+                            new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
                     } else {
-                        marker[count] = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
+                            new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
                     }
                     jsonObj[count] = e.lngLat;
                     count++;
@@ -281,6 +288,6 @@
                     getMatchAll(); // срочно переделать, сильно замедляет
                 });
         });
-    </script>
+</script>
 </body>
 </html>
