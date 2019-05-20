@@ -28,32 +28,39 @@ namespace TestMapBox.Hubs
             var random = new Random();
             CreateCustomers(coordinates, customers, random, Convert.ToInt32(maxDemand));
             var s = new Solution(coordinates.Count, Convert.ToInt32(vehicle), Convert.ToInt32(maxVehicle));
-            var distanceMatrix = new double[coordinates.Count, coordinates.Count];
+            var distanceMatrix = new decimal[coordinates.Count, coordinates.Count];
             CalcDistancies(coordinates, distanceMatrix, distanceSend);
             s.GreedySolution(customers, distanceMatrix);
             //s.TabuSearch(10, distanceMatrix);
-            var coordinatearrays = new List<List<double>>();
+            s.PrintSolution();
+            var coordinatearrays = new List<List<decimal>>();
             var vehicles = s.GetVehicles();
-            for (var j = 0; j < vehicles.Length; j++)
-                if (vehicles[j].Route.Count != 0)
-                {
-                    var routeSize = vehicles[j].Route.Count;
-                    var arraybuf = new List<double>();
-                    for (var k = 0; k < routeSize; k++)
-                    {
-                        arraybuf.Add(coordinates[vehicles[j].Route[k].CustomerId].lng);
-                        arraybuf.Add(coordinates[vehicles[j].Route[k].CustomerId].lat);
-                    }
-                    coordinatearrays.Add(arraybuf);
-                }
+            CreateResultArray(vehicles, coordinates, coordinatearrays);
             var cost = s.GetCost();
             var json = JsonConvert.SerializeObject(coordinatearrays);
             await Clients.All.SendAsync("ReceiveMessage", json, Math.Round(cost, 2).ToString());
         }
 
-        private void CalcDistancies(List<Coordinate> coordinates, double[,] distanceMatrix, string distanceSend)
+        private static void CreateResultArray(Vehicle[] vehicles, List<Coordinate> coordinates, List<List<decimal>> coordinatearrays)
         {
-            var mapboxDistancies = distanceSend.Split(',').Select(x => double.Parse(x, CultureInfo.InvariantCulture))
+            for (var j = 0; j < vehicles.Length; j++)
+                if (vehicles[j].Route.Count != 0)
+                {
+                    var routeSize = vehicles[j].Route.Count;
+                    var arraybuf = new List<decimal>();
+                    for (var k = 0; k < routeSize; k++)
+                    {
+                        arraybuf.Add(coordinates[vehicles[j].Route[k].CustomerId].lng);
+                        arraybuf.Add(coordinates[vehicles[j].Route[k].CustomerId].lat);
+                    }
+
+                    coordinatearrays.Add(arraybuf);
+                }
+        }
+
+        private void CalcDistancies(List<Coordinate> coordinates, decimal[,] distanceMatrix, string distanceSend)
+        {
+            var mapboxDistancies = distanceSend.Split(',').Select(x => decimal.Parse(x, CultureInfo.InvariantCulture))
                 .ToArray();
             int v;
             for (var i = 0; i < coordinates.Count; i++)
@@ -93,11 +100,6 @@ namespace TestMapBox.Hubs
             jsonBuf[0] = jsonBuf[0].Substring(4);
             for (var i = 0; i < jsonBuf.Count; i++)
                 coordinates.Add(JsonConvert.DeserializeObject<Coordinate>(jsonBuf[i]));
-        }
-
-        private double toRadian(double val)
-        {
-            return Math.PI / 180 * val;
         }
     }
 }

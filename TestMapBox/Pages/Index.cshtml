@@ -10,9 +10,7 @@
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.9/mapbox-gl-draw.css' type='text/css' />
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.css' type='text/css' />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
-          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
-          crossorigin=""/>
+
     <style>
         body {
             margin: 0;
@@ -41,12 +39,12 @@
         }
 
         .form-submit-button {
-            background: #0066A2;
+            background: #5181b8;
             color: white;
             border-style: outset;
-            border-color: #0066A2;
+            border-color: #5181b8;
             height: 50px;
-            width: 100px;
+            width: 200px;
             font: bold 15px arial, sans-serif;
             text-shadow: none;
         }
@@ -70,47 +68,40 @@
     </style>
 </head>
 <body>
-    <div id='map'></div>
-    <div class="topcorner">
-        <input type="search" class="" id="address-input" placeholder="Search..." />
-        <br />
-        <br />
-        <label>Количество грузовиков:</label>
-        <br />
-        <input class="inputClass" id="vehicleCount">
-        <br />
-        <br />
-        <label>Вместимость грузовиков:</label>
-        <br />
-        <input class="inputClass" id="maxVehicle">
-        <br />
-        <br />
-        <label>Максимальный спрос клиентов:</label>
-        <br />
-        <input class="inputClass" id="maxDemand">
-        <br /><br />
-        <br /><br />
-        <input type="button" class="form-submit-button" value="Расчёт" id="sendButton" />
-        <br /><br />
-        <input type="button" value="Обновить страницу" onclick="window.location.reload();" />
-        <br /><br />
-        <label id="Cost"></label>
-    </div>
+<div id='map'></div>
+
+<div class="topcorner">
+    <input type="search" class="form-control" id="address-input" placeholder="Search..." />
+    <br />
+    <br />
+    <label style="background: #5181b8; color: white; font-weight: bold;">Количество грузовиков:</label>
+    <br />
+    <input type="number" class="inputClass" id="vehicleCount">
+    <br />
+    <br />
+    <label style="background: #5181b8; color: white; font-weight: bold;">Вместимость грузовиков:</label>
+    <br />
+    <input type="number" class="inputClass" id="maxVehicle">
+    <br />
+    <br />
+    <label style="background: #5181b8; color: white; font-weight: bold;">Максимальный спрос клиентов:</label>
+    <br />
+    <input type="number" class="inputClass" id="maxDemand">
+    <br /><br />
+    <br /><br />
+    <input type="button" class="form-submit-button" value="Расчёт" id="sendButton" />
+    <br /><br />
+    <input type="button" class="form-submit-button" value="Очистить решение" onclick="clearAllLayers();" />
+    <br /><br />
+    <label id="Cost"></label>
+</div>
     <script src='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/places.js@1.4.15"></script>
     <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
     <script src="~/lib/signalr/dist/browser/signalr.js"></script>
     <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.min.js'></script>
-    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
-        integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
-        crossorigin=""></script>
+
 <script>
-    @*L.accessToken = '@Model.MapboxAccessToken';
-    var map = new L.mapbox.Map({
-        container: 'map',
-        style: 'mapbox://styles/mapbox/streets-v11',
-        zoom: 1
-    });*@
     mapboxgl.accessToken = '@Model.MapboxAccessToken';
     var map = new mapboxgl.Map({
         container: 'map',
@@ -120,9 +111,10 @@
     var geocoder = new MapboxGeocoder({
         accessToken: mapboxgl.accessToken,
     });
-    var newArr = [];
+    var distancies = [];
     var coordsbetweencoords = {};
     var count = 0;
+    var test = 0;
     var nav = new mapboxgl.NavigationControl();
     var jsonObj = {};
     var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
@@ -138,28 +130,29 @@
     var coordinates = [];
     var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
     var marker = [];
+    var coordMarkers = [];
     var layerNames = [];
 
     document.getElementById("sendButton").disabled = true;
 
     document.getElementById("sendButton").addEventListener("click", function (event) {
+        //getMatchAll();
         var vehicle = document.getElementById("vehicleCount").value;
         var maxVehicle = document.getElementById("maxVehicle").value;
         var maxDemand = document.getElementById("maxDemand").value;
         var jsonSend = JSON.stringify(jsonObj).toString();
-        var distanceSend = newArr.toString(); 
+        var distanceSend = distancies.toString(); 
         connection.invoke("SendMessage", vehicle, maxVehicle, maxDemand, jsonSend, distanceSend).catch(function (err) {
             return console.error(err.toString());
         });
-        event.preventDefault();
+            event.preventDefault();
     });
 
     function getMatchAll() {
-        
         for (var i = 0; i < Object.keys(jsonObj).length; i++) {
             for (var j = 0; j < Object.keys(jsonObj).length; j++) {
                 var v = i * Object.keys(jsonObj).length + j;
-                //if (newArr[v] == undefined)
+                //if (distancies[v] == undefined)
                 getMatch(i, j, v);
             }
         }
@@ -175,7 +168,7 @@
         req.open('GET', url, true);
         req.onload  = function() {
             var jsonResponse = req.response;
-            var distance = jsonResponse.routes[0].distance;
+            var distance = jsonResponse.routes[0].distance*0.001;
             var duration = jsonResponse.routes[0].duration/60;
             var steps = jsonResponse.routes[0].legs[0].steps;
             var coords = jsonResponse.routes[0].geometry;
@@ -183,7 +176,7 @@
             console.log(coords);
             console.log(distance);
             console.log(duration);
-            newArr[v] = distance;
+            distancies[v] = distance;
             coordsbetweencoords[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = coords;
         };
         req.send();
@@ -209,6 +202,17 @@
         }
     }
 
+    function clearAllLayers() {
+        clearLayers();
+        coordMarkers.forEach((m) => m.remove());
+        coordMarkers = [];
+        jsonObj = {};
+        distancies = [];
+        coordsbetweencoords = {};
+        count = 0;
+        layerNames = [];
+        document.getElementById("Cost").textContent = "";
+    }
     connection.on("ReceiveMessage", function (jsonResult, cost) {
         clearLayers();
         coordinates = JSON.parse(jsonResult);
@@ -254,8 +258,12 @@
                     "line-width": 8
                 }
             });
+            console.log(buf);
         }
+
         document.getElementById("Cost").textContent = "Cost: " + cost;
+        document.getElementById("Cost").style.backgroundColor = "#5181b8";
+        document.getElementById("Cost").style.color = "white";
     });
 
     var placesAutocomplete = places({
@@ -276,12 +284,13 @@
         () => {
             map.on('click',
                 function (e) {
-                    //var marker;
+                    var marker;
                     if (count === 0) {
-                            new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
+                           marker = new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
                     } else {
-                            new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
+                            marker = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
                     }
+                    coordMarkers.push(marker);
                     jsonObj[count] = e.lngLat;
                     count++;
                     console.log(jsonObj);

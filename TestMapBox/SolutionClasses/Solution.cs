@@ -11,12 +11,12 @@ namespace TestMapBox.SolutionClasses
     {
         private int NoOfVehicles, NoOfCustomers;
         private Vehicle[] Vehicles;
-        private double Cost;
+        private decimal Cost;
 
-        //Tabu Search bariables
-        double BestSolutionCost;
+        //Tabu Search variables
+        decimal BestSolutionCost;
         public Vehicle[] vehiclesForBestSolution;
-        public List<double> pastSolutions = new List<double>();
+        public List<decimal> pastSolutions = new List<decimal>();
 
         public Solution(int customerNum, int vehicleNum, int vehicleCap)
         {
@@ -53,21 +53,21 @@ namespace TestMapBox.SolutionClasses
             return Vehicles;
         }
 
-        public double GetCost()
+        public decimal GetCost()
         {
             return Cost;
         }
 
-        public void GreedySolution(Customer[] customers, double[,] distanceMatrix)
+        public void GreedySolution(Customer[] customers, decimal[,] distanceMatrix)
         {
-            double endCost;
+            decimal endCost;
             var vehicleIndex = 0;
 
             while (CheckCustomers(customers))
             {
                 var customersIndex = 0;
                 Customer candidate = null;
-                var minCost = double.MaxValue;
+                var minCost = decimal.MaxValue;
 
                 if (Vehicles[vehicleIndex].Route.Count == 0) Vehicles[vehicleIndex].AddNode(customers[0]);
 
@@ -115,7 +115,7 @@ namespace TestMapBox.SolutionClasses
             Cost += endCost;
         }
 
-        public void TabuSearch(int TABU_Horizon, double[,] distanceMatrix)
+        public void TabuSearch(int TABU_Horizon, decimal[,] distanceMatrix)
         {
             List<Customer> RouteFrom;
             List<Customer> RouteTo;
@@ -123,7 +123,7 @@ namespace TestMapBox.SolutionClasses
             int MovingNodeDemand = 0;
 
             int VehIndexFrom, VehIndexTo;
-            double BestNCost, NeightborCost;
+            decimal BestNCost, NeightborCost;
 
             int SwapIndexA = -1, SwapIndexB = -1, SwapRouteFrom = -1, SwapRouteTo = -1;
 
@@ -137,7 +137,7 @@ namespace TestMapBox.SolutionClasses
             while (true)
             {
                 iteration_number++;
-                BestNCost = double.MaxValue;
+                BestNCost = decimal.MaxValue;
 
                 for (VehIndexFrom = 0; VehIndexFrom < this.Vehicles.Length; VehIndexFrom++)
                 {
@@ -158,20 +158,20 @@ namespace TestMapBox.SolutionClasses
                                 if ((VehIndexFrom == VehIndexTo) ||
                                     this.Vehicles[VehIndexTo].CheckIfFits(MovingNodeDemand))
                                 {
-                                    if (!((VehIndexFrom == VehIndexTo) && ((j == i) || (j == i - 1))))
+                                    if (((VehIndexFrom == VehIndexTo) && ((j == i) || (j == i - 1))) == false)
                                     {
-                                        double minusCost1 = distanceMatrix[RouteFrom[i - 1].CustomerId,
+                                        decimal minusCost1 = distanceMatrix[RouteFrom[i - 1].CustomerId,
                                             RouteFrom[i].CustomerId];
-                                        double minusCost2 = distanceMatrix[RouteFrom[i].CustomerId,
+                                        decimal minusCost2 = distanceMatrix[RouteFrom[i].CustomerId,
                                             RouteFrom[i + 1].CustomerId];
-                                        double minusCost3 = distanceMatrix[RouteTo[j].CustomerId,
+                                        decimal minusCost3 = distanceMatrix[RouteTo[j].CustomerId,
                                             RouteTo[j + 1].CustomerId];
 
-                                        double addedCost1 = distanceMatrix[RouteFrom[i - 1].CustomerId,
+                                        decimal addedCost1 = distanceMatrix[RouteFrom[i - 1].CustomerId,
                                             RouteFrom[i + 1].CustomerId];
-                                        double addedCost2 = distanceMatrix[RouteTo[j].CustomerId,
+                                        decimal addedCost2 = distanceMatrix[RouteTo[j].CustomerId,
                                             RouteFrom[i].CustomerId];
-                                        double addedCost3 = distanceMatrix[RouteFrom[i].CustomerId,
+                                        decimal addedCost3 = distanceMatrix[RouteFrom[i].CustomerId,
                                             RouteTo[j + 1].CustomerId];
 
                                         if ((tabuMatrix[RouteFrom[i - 1].CustomerId, RouteFrom[i + 1].CustomerId] != 0)
@@ -298,7 +298,8 @@ namespace TestMapBox.SolutionClasses
                 outputFile.Write(text);
             }
 
-            File.Open(Path.Combine(KnownFolders.GetPath(KnownFolder.Downloads), "Results.txt"), FileMode.Open);
+            var results = File.Open(Path.Combine(KnownFolders.GetPath(KnownFolder.Downloads), "Results.txt"), FileMode.Open);
+            results.Close();
         }
     }
 }
