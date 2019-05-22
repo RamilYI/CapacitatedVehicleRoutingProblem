@@ -6,9 +6,9 @@
     <meta charset='utf-8' />
     <title>CVRP</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link href='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css' rel='stylesheet' />
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.9/mapbox-gl-draw.css' type='text/css' />
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.css' type='text/css' />
 
     <style>
@@ -49,6 +49,7 @@
             text-shadow: none;
         }
 
+
         .inputClass {
             border: 1px solid #9E9E9E;
             color: #000000;
@@ -62,19 +63,27 @@
 
         .topcorner {
             position: absolute;
-            top: 30px;
-            right: 30px;
+            top: 15px;
+            right: 10px;
+        }
+
+        .one, .two .three {
+            float: left;
+        }
+
+        .one {
+            margin-right: 5px;
         }
     </style>
 </head>
 <body>
-<div id='map'></div>
 
+    <div id='map'></div>
 <div class="topcorner">
-    <input type="search" class="form-control" id="address-input" placeholder="Search..." />
+    <input type="search" id="address-input" placeholder="Search..." />
     <br />
     <br />
-    <label style="background: #5181b8; color: white; font-weight: bold;">Количество грузовиков:</label>
+    <!--<label style="background: #5181b8; color: white; font-weight: bold;">Количество грузовиков:</label>
     <br />
     <input type="number" class="inputClass" id="vehicleCount">
     <br />
@@ -82,6 +91,11 @@
     <label style="background: #5181b8; color: white; font-weight: bold;">Вместимость грузовиков:</label>
     <br />
     <input type="number" class="inputClass" id="maxVehicle">
+    <br />
+    <br />-->
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+        Добавить грузовики
+    </button>
     <br />
     <br />
     <label style="background: #5181b8; color: white; font-weight: bold;">Максимальный спрос клиентов:</label>
@@ -94,17 +108,41 @@
     <br /><br />
     <input type="button" class="form-submit-button" value="Очистить решение" onclick="clearAllLayers();" />
     <br /><br />
-    <input type="button" class="form-submit-button" value="Сохранить инструкции"  onclick="saveInstructions();" />
+    <input type="button" class="form-submit-button" value="Сохранить инструкции" onclick="saveInstructions();" />
     <br /><br />
     <label id="Cost"></label>
 </div>
-    <script src='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.js'></script>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div id="modals" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Добавление грузовиков</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" onclick="AddVehicle();" class="btn btn-primary">Добавить грузовик</button>
+                <button type="button" onclick="ClearVehicles();" class="btn btn-primary">Очистить список</button>
+                <button type="button" onclick="SaveVehicles();" data-dismiss="modal" class="btn btn-primary">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/places.js@1.4.15"></script>
     <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
     <script src="~/lib/signalr/dist/browser/signalr.js"></script>
     <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.min.js'></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 
-<script>
+    <script>
     mapboxgl.accessToken = '@Model.MapboxAccessToken';
     var map = new mapboxgl.Map({
         container: 'map',
@@ -118,11 +156,14 @@
     var coordsbetweencoords = {};
     var count = 0;
     var clientsCount = 0;
+    var vhlCounter = 0;
     var tripDirections = {};
     var saveDirections = [];
+    var vehiclesCapacity = [];
     var nav = new mapboxgl.NavigationControl();
     var jsonObj = {};
-    var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+    var colorArray = [
+        '#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
         '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
         '#80B300', '#809900', '#E6B3B3', '#6680B3', '#66991A',
         '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC',
@@ -131,7 +172,8 @@
         '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
         '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
         '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
-        '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'];
+        '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'
+    ];
     var coordinates = [];
     var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
     var marker = [];
@@ -139,25 +181,26 @@
     var layerNames = [];
     document.getElementById("sendButton").disabled = true;
 
-    document.getElementById("sendButton").addEventListener("click", function (event) {
-        if (clientsCount == 0) {
-            alert("Добавьте клиентов");
-            return;
-        }
-        else if (clientsCount < Math.pow(Object.keys(jsonObj).length - 1, 2)) {
-            alert("Ещё не все клиенты добавлены");
-            return;
-        }
-        var vehicle = document.getElementById("vehicleCount").value;
-        var maxVehicle = document.getElementById("maxVehicle").value;
-        var maxDemand = document.getElementById("maxDemand").value;
-        var jsonSend = JSON.stringify(jsonObj).toString();
-        var distanceSend = distancies.toString(); 
-        connection.invoke("SendMessage", vehicle, maxVehicle, maxDemand, jsonSend, distanceSend).catch(function (err) {
-            return console.error(err.toString());
-        });
+    document.getElementById("sendButton").addEventListener("click",
+        function(event) {
+            if (clientsCount == 0) {
+                alert("Добавьте клиентов");
+                return;
+            } else if (clientsCount < Math.pow(Object.keys(jsonObj).length - 1, 2)) {
+                alert("Ещё не все клиенты добавлены");
+                return;
+            }
+            //var vehicle = document.getElementById("vehicleCount").value;
+            var vehicle = JSON.stringify(vehiclesCapacity);
+            var maxDemand = document.getElementById("maxDemand").value;
+            var jsonSend = JSON.stringify(jsonObj).toString();
+            var distanceSend = distancies.toString();
+            connection.invoke("SendMessage", vehicle, maxDemand, jsonSend, distanceSend).catch(
+                function(err) {
+                    return console.error(err.toString());
+                });
             event.preventDefault();
-    });
+        });
 
     function getMatchAll() {
         clientsCount = 0;
@@ -168,22 +211,51 @@
                 getMatch(i, j, v);
             }
         }
-        
+
+    }
+
+    function AddVehicle() {
+        $("#modals").append('<div class="modal-body" id="vehiclePlace"></div>');
+        vhlCounter++;
+        $("#vehiclePlace").append('<label style="font-weight: bold;" class="one">' + vhlCounter +
+            '. Вместимость грузовика: </label><input type="number" class="inputClass one" id="maxVehicle' + vhlCounter + '">' +
+            '<button type="button" onclick="DeleteVehicle();" class="btn btn-secondary three">Удалить</button><br/><br/>');
+    }
+
+    function DeleteVehicle() {
+    }
+
+    function ClearVehicles() {
+        $("div#vehiclePlace").remove();
+        vhlCounter = 0;
+        vehiclesCapacity.length = 0;
+    }
+
+    function SaveVehicles() {
+        for (var i = 0; i < vhlCounter; i++) {
+            vehiclesCapacity[i] = document.getElementById("maxVehicle" + (i + 1).toString()).value;
+        }
     }
 
     function getMatch(e, q, v) {
-
-        var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + jsonObj[e].lng + ',' + jsonObj[e].lat
-            + ';' + jsonObj[q].lng + ',' + jsonObj[q].lat
-            + '?geometries=geojson&steps=true&access_token=' + mapboxgl.accessToken;
+        var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' +
+            jsonObj[e].lng +
+            ',' +
+            jsonObj[e].lat +
+            ';' +
+            jsonObj[q].lng +
+            ',' +
+            jsonObj[q].lat +
+            '?geometries=geojson&steps=true&access_token=' +
+            mapboxgl.accessToken;
         //console.log(url);
         var req = new XMLHttpRequest();
         req.responseType = 'json';
         req.open('GET', url, true);
-        req.onload  = function() {
+        req.onload = function() {
             var jsonResponse = req.response;
-            var distance = jsonResponse.routes[0].distance*0.001;
-            var duration = jsonResponse.routes[0].duration/60;
+            var distance = jsonResponse.routes[0].distance * 0.001;
+            var duration = jsonResponse.routes[0].duration / 60;
             var steps = jsonResponse.routes[0].legs[0].steps;
             var coords = jsonResponse.routes[0].geometry;
             //console.log(steps);
@@ -192,17 +264,18 @@
             //console.log(duration);
             distancies[v] = distance;
             coordsbetweencoords[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = coords;
-            tripDirections[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = getInstructions(jsonResponse.routes[0], q);
+            tripDirections[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] =
+                getInstructions(jsonResponse.routes[0], q);
             clientsCount++;
             if (clientsCount === Math.pow(Object.keys(jsonObj).length - 1, 2)) alert("Клиенты добавлены");
         };
         req.send();
-        
+
     }
 
-    connection.start().then(function(){
+    connection.start().then(function() {
         document.getElementById("sendButton").disabled = false;
-    }).catch(function (err) {
+    }).catch(function(err) {
         return console.error(err.toString());
     });
 
@@ -211,11 +284,11 @@
             try {
                 map.removeLayer(i.toString());
                 map.removeSource(i.toString());
+            } catch (err) {
             }
-            catch(err){}
         }
         if (marker.length > 0) {
-        marker.forEach((m) => m.remove());
+            marker.forEach((m) => m.remove());
             marker = [];
         }
     }
@@ -231,7 +304,11 @@
                 directions.push("Step " + (stepCount + 1).toString() + ":" + steps[j].maneuver.instruction + "\n");
                 stepCount++;
             }
-            directions.push("Вы добрались до (" + jsonObj[q].lng.toString() +  ";" + jsonObj[q].lat.toString() + ") точки.\n")
+            directions.push("Вы добрались до (" +
+                jsonObj[q].lng.toString() +
+                ";" +
+                jsonObj[q].lat.toString() +
+                ") точки.\n")
         }
         return directions;
     }
@@ -251,73 +328,80 @@
     function saveInstructions() {
         saveDirections = [coordinates.length];
         for (var i = 0; i < coordinates.length; i++) {
-            saveDirections[i] = "Vehicle " + (i+1).toString() + ":\n";
+            saveDirections[i] = "Vehicle " + (i + 1).toString() + ":\n";
             for (var k = 0; k < coordinates[i].length - 2; k += 2) {
                 saveDirections[i] += tripDirections[coordinates[i][k].toString() + coordinates[i][k + 2].toString()];
             }
         }
 
         var a = document.createElement("a");
-        var file = new Blob([saveDirections], {type: "application/doc"});
+        var file = new Blob([saveDirections], { type: "application/doc" });
         a.href = URL.createObjectURL(file);
         a.download = "instructions.doc";
         a.click();
         //return saveDirections;
     }
 
-    connection.on("ReceiveMessage", function (jsonResult, cost) {
-        clearLayers();
-        layerNames = [coordinates.length];
-        coordinates = JSON.parse(jsonResult);
-        for (var i = 0; i < coordinates.length; i++) {
-            var buf = new Array();
-            var cccount = 0;
-            var count2 = 0;
-            for (var k = 0; k < coordinates[i].length - 2; k += 2) {
-                buf[cccount] = [coordinates[i][k], coordinates[i][k + 1]];
-                count2++;
-                var el = document.createElement('div'); el.className = 'marker';
-                el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + count2 + '</b></span>';
-                el.fontSize = "large";
-                marker.push(new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));
-                cccount++;
-                var coordCount = coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates.length;
-                for (var z = 0; z < coordCount; z++) {
-                    buf[cccount] = coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates[z];
-                    cccount += 1;
-                }
-            }
-            layerNames[i] = i;
-            map.addLayer({
-                "id": layerNames[i].toString(),
-                "type": "line",
-                "source": {
-                    "type": "geojson",
-                    "data": {
-                        "type": "Feature",
-                        "properties": {},
-                        "geometry": {
-                            "type": "LineString",
-                            "coordinates": buf
-                        }
+    connection.on("ReceiveMessage",
+        function(jsonResult, cost) {
+            clearLayers();
+            layerNames = [coordinates.length];
+            coordinates = JSON.parse(jsonResult);
+            for (var i = 0; i < coordinates.length; i++) {
+                var buf = new Array();
+                var cccount = 0;
+                var count2 = 0;
+                for (var k = 0; k < coordinates[i].length - 2; k += 2) {
+                    buf[cccount] = [coordinates[i][k], coordinates[i][k + 1]];
+                    count2++;
+                    var el = document.createElement('div');
+                    el.className = 'marker';
+                    el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + count2 + '</b></span>';
+                    el.fontSize = "large";
+                    marker.push(
+                        new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));
+                    cccount++;
+                    var coordCount =
+                        coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
+                            .length;
+                    for (var z = 0; z < coordCount; z++) {
+                        buf[cccount] =
+                            coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()]
+                            .coordinates[z];
+                        cccount += 1;
                     }
-                },
-                "layout": {
-                    "line-join": "round",
-                    "line-cap": "round"
-                },
-                "paint": {
-                    "line-color": colorArray[i],
-                    "line-width": 8
                 }
-            });
-            //console.log(buf);
-        }
+                layerNames[i] = i;
+                map.addLayer({
+                    "id": layerNames[i].toString(),
+                    "type": "line",
+                    "source": {
+                        "type": "geojson",
+                        "data": {
+                            "type": "Feature",
+                            "properties": {},
+                            "geometry": {
+                                "type": "LineString",
+                                "coordinates": buf
+                            }
+                        }
+                    },
+                    "layout": {
+                        "line-join": "round",
+                        "line-cap": "round"
+                    },
+                    "paint": {
+                        "line-color": colorArray[i],
+                        "line-width": 8
+                    }
+                });
+                //console.log(buf);
+            }
 
-        document.getElementById("Cost").textContent = "Cost: " + cost;
-        document.getElementById("Cost").style.backgroundColor = "#5181b8";
-        document.getElementById("Cost").style.color = "white";
-    });
+            document.getElementById("Cost").textContent = "Cost: " + cost;
+            document.getElementById("Cost").style.backgroundColor = "#5181b8";
+            document.getElementById("Cost").style.color = "white";
+        });
 
     var placesAutocomplete = places({
         container: document.querySelector('#address-input'),
@@ -336,19 +420,19 @@
     map.on('load',
         () => {
             map.on('click',
-                function (e) {
+                function(e) {
                     clientsCount = 0;
                     var marker;
                     if (count === 0) {
-                           marker = new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
+                        marker = new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
                     } else {
-                            marker = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
+                        marker = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
                     }
                     coordMarkers.push(marker);
                     jsonObj[count] = e.lngLat;
                     count++;
                 });
         });
-</script>
+    </script>
 </body>
 </html>

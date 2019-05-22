@@ -19,7 +19,7 @@ namespace TestMapBox.SolutionClasses
         public Vehicle[] vehiclesForBestSolution;
         public List<decimal> pastSolutions = new List<decimal>();
 
-        public Solution(int customerNum, int vehicleNum, int vehicleCap)
+        public Solution(int customerNum, int vehicleNum, int[] vehicles)
         {
             NoOfCustomers = customerNum;
             NoOfVehicles = vehicleNum;
@@ -27,16 +27,16 @@ namespace TestMapBox.SolutionClasses
             Vehicles = new Vehicle[NoOfVehicles];
 
             vehiclesForBestSolution = new Vehicle[NoOfVehicles];
-
-            InitVehicles(vehicleCap);
+            
+            InitVehicles(vehicles);
         }
 
-        private void InitVehicles(int vehicleCap)
+        private void InitVehicles(int[] vehicles)
         {
             for (var i = 0; i < NoOfVehicles; i++)
             {
-                Vehicles[i] = new Vehicle(i + 1, vehicleCap);
-                vehiclesForBestSolution[i] = new Vehicle(i + 1, vehicleCap);
+                Vehicles[i] = new Vehicle(i + 1, vehicles[i]);
+                vehiclesForBestSolution[i] = new Vehicle(i + 1, vehicles[i]);
             }
         }
 
