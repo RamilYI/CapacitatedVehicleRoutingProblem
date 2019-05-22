@@ -43,7 +43,7 @@
             color: white;
             border-style: outset;
             border-color: #5181b8;
-            height: 50px;
+            height: 30px;
             width: 200px;
             font: bold 15px arial, sans-serif;
             text-shadow: none;
@@ -88,11 +88,13 @@
     <br />
     <input type="number" class="inputClass" id="maxDemand">
     <br /><br />
+    <input type="button" class="form-submit-button" value="Добавить клиентов" onclick="getMatchAll();" />
+    <br /><br />
     <input type="button" class="form-submit-button" value="Расчёт" id="sendButton" />
     <br /><br />
-    <input type="button" class="form-submit-button" value="Очистить решение" id="clearButton" onclick="clearAllLayers();" />
+    <input type="button" class="form-submit-button" value="Очистить решение" onclick="clearAllLayers();" />
     <br /><br />
-    <input type="button" class="form-submit-button" value="Сохранить инструкции" id="saveButton" onclick="saveInstructions();" />
+    <input type="button" class="form-submit-button" value="Сохранить инструкции"  onclick="saveInstructions();" />
     <br /><br />
     <label id="Cost"></label>
 </div>
@@ -115,6 +117,7 @@
     var distancies = [];
     var coordsbetweencoords = {};
     var count = 0;
+    var clientsCount = 0;
     var tripDirections = {};
     var saveDirections = [];
     var nav = new mapboxgl.NavigationControl();
@@ -134,11 +137,17 @@
     var marker = [];
     var coordMarkers = [];
     var layerNames = [];
-
     document.getElementById("sendButton").disabled = true;
 
     document.getElementById("sendButton").addEventListener("click", function (event) {
-        getMatchAll();
+        if (clientsCount == 0) {
+            alert("Добавьте клиентов");
+            return;
+        }
+        else if (clientsCount < Math.pow(Object.keys(jsonObj).length - 1, 2)) {
+            alert("Ещё не все клиенты добавлены");
+            return;
+        }
         var vehicle = document.getElementById("vehicleCount").value;
         var maxVehicle = document.getElementById("maxVehicle").value;
         var maxDemand = document.getElementById("maxDemand").value;
@@ -151,6 +160,7 @@
     });
 
     function getMatchAll() {
+        clientsCount = 0;
         for (var i = 0; i < Object.keys(jsonObj).length; i++) {
             for (var j = 0; j < Object.keys(jsonObj).length; j++) {
                 var v = i * Object.keys(jsonObj).length + j;
@@ -158,10 +168,11 @@
                 getMatch(i, j, v);
             }
         }
-        console.log("end");
+        
     }
 
     function getMatch(e, q, v) {
+
         var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + jsonObj[e].lng + ',' + jsonObj[e].lat
             + ';' + jsonObj[q].lng + ',' + jsonObj[q].lat
             + '?geometries=geojson&steps=true&access_token=' + mapboxgl.accessToken;
@@ -182,8 +193,11 @@
             distancies[v] = distance;
             coordsbetweencoords[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = coords;
             tripDirections[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = getInstructions(jsonResponse.routes[0], q);
+            clientsCount++;
+            if (clientsCount === Math.pow(Object.keys(jsonObj).length - 1, 2)) alert("Клиенты добавлены");
         };
         req.send();
+        
     }
 
     connection.start().then(function(){
@@ -253,6 +267,7 @@
 
     connection.on("ReceiveMessage", function (jsonResult, cost) {
         clearLayers();
+        layerNames = [coordinates.length];
         coordinates = JSON.parse(jsonResult);
         for (var i = 0; i < coordinates.length; i++) {
             var buf = new Array();
@@ -322,6 +337,7 @@
         () => {
             map.on('click',
                 function (e) {
+                    clientsCount = 0;
                     var marker;
                     if (count === 0) {
                            marker = new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
@@ -331,8 +347,6 @@
                     coordMarkers.push(marker);
                     jsonObj[count] = e.lngLat;
                     count++;
-                    //console.log(jsonObj);
-                     // срочно переделать, сильно замедляет
                 });
         });
 </script>

@@ -13,6 +13,7 @@ namespace TestMapBox.SolutionClasses
         private Vehicle[] Vehicles;
         private decimal Cost;
 
+        private decimal greedySolCost;
         //Tabu Search variables
         decimal BestSolutionCost;
         public Vehicle[] vehiclesForBestSolution;
@@ -113,9 +114,10 @@ namespace TestMapBox.SolutionClasses
             endCost = distanceMatrix[Vehicles[vehicleIndex].CurrentLocation, 0];
             Vehicles[vehicleIndex].AddNode(customers[0]);
             Cost += endCost;
+            greedySolCost = Cost;
         }
 
-        public void TabuSearch(int TABU_Horizon, decimal[,] distanceMatrix)
+        public void TabuSearch(decimal[,] distanceMatrix)
         {
             List<Customer> RouteFrom;
             List<Customer> RouteTo;
@@ -129,8 +131,9 @@ namespace TestMapBox.SolutionClasses
 
             int MAX_ITERATIONS = 400;
             int iteration_number = 0;
-
+            bool neightboor = false;
             int dimensionCustomer = distanceMatrix.GetLength(0);
+            int TABU_Horizon = NoOfCustomers;
             int[,] tabuMatrix = new int[dimensionCustomer + 1, dimensionCustomer + 1];
             BestSolutionCost = this.Cost;
 
@@ -159,6 +162,11 @@ namespace TestMapBox.SolutionClasses
                                 {
                                     if (((VehIndexFrom == VehIndexTo) && ((j == i) || (j == i - 1))) == false)
                                     {
+                                        if ((tabuMatrix[RouteFrom[i - 1].CustomerId, RouteFrom[i + 1].CustomerId] != 0)
+                                            || (tabuMatrix[RouteTo[j].CustomerId, RouteFrom[i].CustomerId] != 0)
+                                            || (tabuMatrix[RouteFrom[i].CustomerId, RouteTo[j + 1].CustomerId] != 0))
+                                            break;
+
                                         decimal minusCost1 = distanceMatrix[RouteFrom[i - 1].CustomerId,
                                             RouteFrom[i].CustomerId];
                                         decimal minusCost2 = distanceMatrix[RouteFrom[i].CustomerId,
@@ -173,10 +181,7 @@ namespace TestMapBox.SolutionClasses
                                         decimal addedCost3 = distanceMatrix[RouteFrom[i].CustomerId,
                                             RouteTo[j + 1].CustomerId];
 
-                                        if ((tabuMatrix[RouteFrom[i - 1].CustomerId, RouteFrom[i + 1].CustomerId] != 0)
-                                            || (tabuMatrix[RouteTo[j].CustomerId, RouteFrom[i].CustomerId] != 0)
-                                            || (tabuMatrix[RouteFrom[i].CustomerId, RouteTo[j + 1].CustomerId] != 0))
-                                            break;
+
 
                                         NeightborCost = addedCost1 + addedCost2 + addedCost3
                                                         - minusCost1 - minusCost2 - minusCost3;
@@ -195,11 +200,11 @@ namespace TestMapBox.SolutionClasses
                         }
                     }
                 }
-                if (BestNCost == decimal.MaxValue || iteration_number == MAX_ITERATIONS) break;
-                else if (BestNCost == decimal.MaxValue) continue;
-               
+                if (BestNCost == decimal.MaxValue && iteration_number == MAX_ITERATIONS) break;
+                if (BestNCost == decimal.MaxValue) continue;
 
-                    for (int o = 0; o < tabuMatrix.GetLength(1); o++)
+
+                for (int o = 0; o < tabuMatrix.GetLength(1); o++)
                     {
                         for (int p = 0; p < tabuMatrix.GetLength(1); p++)
                         {
@@ -251,13 +256,16 @@ namespace TestMapBox.SolutionClasses
 
                     pastSolutions.Add(this.Cost);
                     this.Cost += BestNCost;
-                    if (this.Cost < BestSolutionCost) SaveBestSolution();
+                    if (this.Cost < BestSolutionCost)
+                    {
+                    neightboor = true;
+                    SaveBestSolution();
+                    }
                 
 
                 if (iteration_number == MAX_ITERATIONS) break;
             }
-
-            this.Vehicles = vehiclesForBestSolution;
+            if (neightboor) this.Vehicles = vehiclesForBestSolution;
             this.Cost = BestSolutionCost;
         }
 
@@ -292,14 +300,15 @@ namespace TestMapBox.SolutionClasses
                 var routeSize = Vehicles[j].Route.Count;
                 for (var k = 0; k < routeSize; k++)
                     if (k == routeSize - 1)
-                        text.Append(Vehicles[j].Route[k].CustomerId);
+                        text.Append("(" + Vehicles[j].Route[k].X + ";" + Vehicles[j].Route[k].Y + ")");
                     else
-                        text.Append(Vehicles[j].Route[k].CustomerId + "->");
+                        text.Append("(" + Vehicles[j].Route[k].X + ";" + Vehicles[j].Route[k].Y + ")" + "->");
                 text.Append('\n');
                 }
             }
 
-            text.Append("\n\n\nSolution Cost " + Cost + "\n");
+            text.Append("\n\n\nTabuSearch Cost " + Cost + "\n");
+            text.Append("\n\n\nGreedy Cost " + greedySolCost + "\n");
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(KnownFolders.GetPath(KnownFolder.Downloads), "Results.txt")))
             {
                 outputFile.Write(text);
