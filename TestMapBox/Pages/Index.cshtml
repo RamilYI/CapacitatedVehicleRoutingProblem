@@ -88,10 +88,11 @@
     <br />
     <input type="number" class="inputClass" id="maxDemand">
     <br /><br />
-    <br /><br />
     <input type="button" class="form-submit-button" value="Расчёт" id="sendButton" />
     <br /><br />
-    <input type="button" class="form-submit-button" value="Очистить решение" onclick="clearAllLayers();" />
+    <input type="button" class="form-submit-button" value="Очистить решение" id="clearButton" onclick="clearAllLayers();" />
+    <br /><br />
+    <input type="button" class="form-submit-button" value="Сохранить инструкции" id="saveButton" onclick="saveInstructions();" />
     <br /><br />
     <label id="Cost"></label>
 </div>
@@ -114,7 +115,8 @@
     var distancies = [];
     var coordsbetweencoords = {};
     var count = 0;
-    var test = 0;
+    var tripDirections = {};
+    var saveDirections = [];
     var nav = new mapboxgl.NavigationControl();
     var jsonObj = {};
     var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
@@ -136,7 +138,7 @@
     document.getElementById("sendButton").disabled = true;
 
     document.getElementById("sendButton").addEventListener("click", function (event) {
-        //getMatchAll();
+        getMatchAll();
         var vehicle = document.getElementById("vehicleCount").value;
         var maxVehicle = document.getElementById("maxVehicle").value;
         var maxDemand = document.getElementById("maxDemand").value;
@@ -156,13 +158,14 @@
                 getMatch(i, j, v);
             }
         }
+        console.log("end");
     }
 
     function getMatch(e, q, v) {
         var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + jsonObj[e].lng + ',' + jsonObj[e].lat
             + ';' + jsonObj[q].lng + ',' + jsonObj[q].lat
             + '?geometries=geojson&steps=true&access_token=' + mapboxgl.accessToken;
-        console.log(url);
+        //console.log(url);
         var req = new XMLHttpRequest();
         req.responseType = 'json';
         req.open('GET', url, true);
@@ -172,12 +175,13 @@
             var duration = jsonResponse.routes[0].duration/60;
             var steps = jsonResponse.routes[0].legs[0].steps;
             var coords = jsonResponse.routes[0].geometry;
-            console.log(steps);
-            console.log(coords);
-            console.log(distance);
-            console.log(duration);
+            //console.log(steps);
+            //console.log(coords);
+            //console.log(distance);
+            //console.log(duration);
             distancies[v] = distance;
             coordsbetweencoords[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = coords;
+            tripDirections[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = getInstructions(jsonResponse.routes[0], q);
         };
         req.send();
     }
@@ -202,6 +206,22 @@
         }
     }
 
+    function getInstructions(data, q) {
+        var directions = [];
+        var legs = data.legs;
+        var stepCount = 0;
+        // Output the instructions for each step of each leg in the response object
+        for (var i = 0; i < legs.length; i++) {
+            var steps = legs[i].steps;
+            for (var j = 0; j < steps.length; j++) {
+                directions.push("Step " + (stepCount + 1).toString() + ":" + steps[j].maneuver.instruction + "\n");
+                stepCount++;
+            }
+            directions.push("Вы добрались до (" + jsonObj[q].lng.toString() +  ";" + jsonObj[q].lat.toString() + ") точки.\n")
+        }
+        return directions;
+    }
+
     function clearAllLayers() {
         clearLayers();
         coordMarkers.forEach((m) => m.remove());
@@ -213,6 +233,24 @@
         layerNames = [];
         document.getElementById("Cost").textContent = "";
     }
+
+    function saveInstructions() {
+        saveDirections = [coordinates.length];
+        for (var i = 0; i < coordinates.length; i++) {
+            saveDirections[i] = "Vehicle " + (i+1).toString() + ":\n";
+            for (var k = 0; k < coordinates[i].length - 2; k += 2) {
+                saveDirections[i] += tripDirections[coordinates[i][k].toString() + coordinates[i][k + 2].toString()];
+            }
+        }
+
+        var a = document.createElement("a");
+        var file = new Blob([saveDirections], {type: "application/doc"});
+        a.href = URL.createObjectURL(file);
+        a.download = "instructions.doc";
+        a.click();
+        //return saveDirections;
+    }
+
     connection.on("ReceiveMessage", function (jsonResult, cost) {
         clearLayers();
         coordinates = JSON.parse(jsonResult);
@@ -258,7 +296,7 @@
                     "line-width": 8
                 }
             });
-            console.log(buf);
+            //console.log(buf);
         }
 
         document.getElementById("Cost").textContent = "Cost: " + cost;
@@ -293,8 +331,8 @@
                     coordMarkers.push(marker);
                     jsonObj[count] = e.lngLat;
                     count++;
-                    console.log(jsonObj);
-                    getMatchAll(); // срочно переделать, сильно замедляет
+                    //console.log(jsonObj);
+                     // срочно переделать, сильно замедляет
                 });
         });
 </script>

@@ -150,7 +150,6 @@ namespace TestMapBox.SolutionClasses
                         {
                             RouteTo = this.Vehicles[VehIndexTo].Route;
                             int routeToLength = RouteTo.Count;
-
                             for (int j = 0; j < routeToLength - 1; j++)
                             {
                                 MovingNodeDemand = RouteFrom[i].Demand;
@@ -182,71 +181,79 @@ namespace TestMapBox.SolutionClasses
                                         NeightborCost = addedCost1 + addedCost2 + addedCost3
                                                         - minusCost1 - minusCost2 - minusCost3;
 
-                                        if (!(NeightborCost < BestNCost)) continue;
-                                        BestNCost = NeightborCost;
-                                        SwapIndexA = i;
-                                        SwapIndexB = j;
-                                        SwapRouteFrom = VehIndexFrom;
-                                        SwapRouteTo = VehIndexTo;
+                                        if (NeightborCost < BestNCost)
+                                        {
+                                            BestNCost = NeightborCost;
+                                            SwapIndexA = i;
+                                            SwapIndexB = j;
+                                            SwapRouteFrom = VehIndexFrom;
+                                            SwapRouteTo = VehIndexTo;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+                if (BestNCost == decimal.MaxValue || iteration_number == MAX_ITERATIONS) break;
+                else if (BestNCost == decimal.MaxValue) continue;
+               
 
-                for (int o = 0; o < tabuMatrix.GetLength(1); o++)
-                {
-                    for (int p = 0; p < tabuMatrix.GetLength(1); p++)
+                    for (int o = 0; o < tabuMatrix.GetLength(1); o++)
                     {
-                        if (tabuMatrix[o,p] > 0)
-                        { tabuMatrix[o, p]--; }
+                        for (int p = 0; p < tabuMatrix.GetLength(1); p++)
+                        {
+                            if (tabuMatrix[o, p] > 0)
+                            {
+                                tabuMatrix[o, p]--;
+                            }
+                        }
                     }
-                }
 
-                RouteFrom = this.Vehicles[SwapRouteFrom].Route;
-                RouteTo = this.Vehicles[SwapRouteTo].Route;
-                this.Vehicles[SwapRouteTo].Route = null;
-                this.Vehicles[SwapRouteFrom].Route = null;
+                    RouteFrom = this.Vehicles[SwapRouteFrom].Route;
+                    RouteTo = this.Vehicles[SwapRouteTo].Route;
+                    this.Vehicles[SwapRouteTo].Route = null;
+                    this.Vehicles[SwapRouteFrom].Route = null;
 
-                Customer swapNode = RouteFrom[SwapIndexA];
+                    Customer swapNode = RouteFrom[SwapIndexA];
+                    int nodeIdBefore = RouteFrom[SwapIndexA - 1].CustomerId;
+                    int nodeIdAfter = RouteFrom[SwapIndexA + 1].CustomerId;
+                    int nodeId_F = RouteTo[SwapIndexB].CustomerId;
+                    int nodeId_G = RouteTo[SwapIndexB + 1].CustomerId;
 
-                int nodeIdBefore = RouteFrom[SwapIndexA - 1].CustomerId;
-                int nodeIdAfter = RouteFrom[SwapIndexA + 1].CustomerId;
-                int nodeId_F = RouteTo[SwapIndexB].CustomerId;
-                int nodeId_G = RouteTo[SwapIndexB + 1].CustomerId;
+                    Random tabuRandom = new Random();
 
-                Random tabuRandom = new Random();
+                    int randomDelay1 = tabuRandom.Next(5);
+                    int randomDelay2 = tabuRandom.Next(5);
+                    int randomDelay3 = tabuRandom.Next(5);
 
-                int randomDelay1 = tabuRandom.Next(5);
-                int randomDelay2 = tabuRandom.Next(5);
-                int randomDelay3 = tabuRandom.Next(5);
+                    tabuMatrix[nodeIdBefore, swapNode.CustomerId] = TABU_Horizon + randomDelay1;
+                    tabuMatrix[swapNode.CustomerId, nodeIdAfter] = TABU_Horizon + randomDelay2;
+                    tabuMatrix[nodeId_F, nodeId_G] = TABU_Horizon + randomDelay3;
 
-                tabuMatrix[nodeIdBefore, swapNode.CustomerId] = TABU_Horizon + randomDelay1;
-                tabuMatrix[swapNode.CustomerId, nodeIdAfter] = TABU_Horizon + randomDelay2;
-                tabuMatrix[nodeId_F, nodeId_G] = TABU_Horizon + randomDelay3;
+                    RouteFrom.RemoveAt(SwapIndexA);
 
-                RouteFrom.RemoveAt(SwapIndexA);
+                    if (SwapRouteFrom == SwapRouteTo)
+                    {
+                        if (SwapIndexA < SwapIndexB) RouteTo.Insert(SwapIndexB, swapNode); // [SwapIndexB] = swapNode;
+                        else RouteTo.Insert(SwapIndexB + 1, swapNode); //RouteTo[SwapIndexB + 1] = swapNode;
+                    }
+                    else
+                    {
+                        RouteTo.Insert(SwapIndexB + 1, swapNode); //RouteTo[SwapIndexB] = swapNode;
+                    }
 
-                if (SwapRouteFrom == SwapRouteTo)
-                {
-                    if (SwapIndexA < SwapIndexB) RouteTo.Insert(SwapIndexB, swapNode); // [SwapIndexB] = swapNode;
-                    else RouteTo.Insert(SwapIndexB + 1, swapNode); //RouteTo[SwapIndexB + 1] = swapNode;
-                }
-                else
-                {
-                    RouteTo.Insert(SwapIndexB + 1, swapNode); //RouteTo[SwapIndexB] = swapNode;
-                }
+                    this.Vehicles[SwapRouteFrom].Route = RouteFrom;
+                    this.Vehicles[SwapRouteFrom].Load -= MovingNodeDemand;
 
-                this.Vehicles[SwapRouteFrom].Route = RouteFrom;
-                this.Vehicles[SwapRouteFrom].Load -= MovingNodeDemand;
+                    this.Vehicles[SwapRouteTo].Route = RouteTo;
+                    this.Vehicles[SwapRouteTo].Load += MovingNodeDemand;
 
-                this.Vehicles[SwapRouteTo].Route = RouteTo;
-                this.Vehicles[SwapRouteTo].Load += MovingNodeDemand;
+                    pastSolutions.Add(this.Cost);
+                    this.Cost += BestNCost;
+                    if (this.Cost < BestSolutionCost) SaveBestSolution();
+                
 
-                pastSolutions.Add(this.Cost);
-                this.Cost += BestNCost;
-                if(this.Cost < BestSolutionCost) SaveBestSolution();
                 if (iteration_number == MAX_ITERATIONS) break;
             }
 
