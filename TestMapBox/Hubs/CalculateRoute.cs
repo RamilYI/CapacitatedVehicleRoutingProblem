@@ -20,7 +20,7 @@ namespace TestMapBox.Hubs
     public class CalculateRoute : Hub
     {
         public async Task SendMessage(string vehicle, string maxDemand, string jsonObj,
-            string distanceSend)
+            string distanceSend, string durationsSend)
         {
             var coordinates = new List<Coordinate>();
             JsonProcessing(coordinates, jsonObj);
@@ -28,10 +28,20 @@ namespace TestMapBox.Hubs
             var random = new Random();
             CreateCustomers(coordinates, customers, random, Convert.ToInt32(maxDemand));
             var vehicleArr = JsonConvert.DeserializeObject<int[]>(vehicle);
-            var s = new Solution(coordinates.Count,vehicleArr.Length, vehicleArr);
+            var durationsArr = JsonConvert.DeserializeObject<double[]>(durationsSend);
+            var s = new Solution(coordinates.Count, vehicleArr.Length, vehicleArr);
             var distanceMatrix = new decimal[coordinates.Count, coordinates.Count];
             CalcDistancies(coordinates, distanceMatrix, distanceSend);
-            s.GreedySolution(customers, distanceMatrix);
+
+            try
+            {
+                s.GreedySolution(customers, distanceMatrix);
+            }
+            catch (Exception)
+            {
+                await Clients.All.SendAsync("ReceiveMessage", 0, 0);
+            }
+
             s.TabuSearch(distanceMatrix);
             s.PrintSolution();
             var coordinatearrays = new List<List<decimal>>();

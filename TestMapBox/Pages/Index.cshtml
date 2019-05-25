@@ -59,6 +59,7 @@
             font-size: 11px;
             font-family: Verdana;
             background: #FFF;
+            width: 120px;
         }
 
         .topcorner {
@@ -74,13 +75,33 @@
         .one {
             margin-right: 5px;
         }
+
+        .legend {
+            background-color: #fff;
+            border-radius: 7px;
+            bottom: 30px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            padding: 10px;
+            position: absolute;
+            left: 30px;
+            z-index: 1;
+        }
+
+        .legend div span {
+            border-radius: 50%;
+            display: inline-block;
+            height: 10px;
+            margin-right: 5px;
+            width: 10px;
+        }
     </style>
 </head>
 <body>
 
     <div id='map'></div>
 <div class="topcorner">
-    <input type="search" id="address-input" placeholder="Search..." />
+    <input type="search" id="address-input" placeholder="Поиск..." />
     <br />
     <br />
     <!--<label style="background: #5181b8; color: white; font-weight: bold;">Количество грузовиков:</label>
@@ -100,7 +121,7 @@
     <br />
     <label style="background: #5181b8; color: white; font-weight: bold;">Максимальный спрос клиентов:</label>
     <br />
-    <input type="number" class="inputClass" id="maxDemand">
+    <input type="number" class="inputClass" min="0" id="maxDemand">
     <br /><br />
     <input type="button" class="form-submit-button" value="Добавить клиентов" onclick="getMatchAll();" />
     <br /><br />
@@ -133,6 +154,9 @@
     </div>
 </div>
 
+<div id='state-legend' class='legend'>
+</div>
+
 <script src='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/places.js@1.4.15"></script>
     <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
@@ -153,8 +177,10 @@
         accessToken: mapboxgl.accessToken,
     });
     var distancies = [];
+    var durations = [];
     var coordsbetweencoords = {};
     var count = 0;
+    var check
     var clientsCount = 0;
     var vhlCounter = 0;
     var tripDirections = {};
@@ -182,9 +208,10 @@
     document.getElementById("sendButton").disabled = true;
 
     document.getElementById("sendButton").addEventListener("click",
-        function(event) {
-            if (clientsCount == 0) {
-                alert("Добавьте клиентов");
+        function (event) {
+            $("#state-legend").empty();
+            if (clientsCount == 0 || vehiclesCapacity.length == 0) {
+                alert("Добавьте клиентов и транспортные средства");
                 return;
             } else if (clientsCount < Math.pow(Object.keys(jsonObj).length - 1, 2)) {
                 alert("Ещё не все клиенты добавлены");
@@ -195,7 +222,8 @@
             var maxDemand = document.getElementById("maxDemand").value;
             var jsonSend = JSON.stringify(jsonObj).toString();
             var distanceSend = distancies.toString();
-            connection.invoke("SendMessage", vehicle, maxDemand, jsonSend, distanceSend).catch(
+            var durationsSend = JSON.stringify(durations);
+            connection.invoke("SendMessage", vehicle, maxDemand, jsonSend, distanceSend, durationsSend).catch(
                 function(err) {
                     return console.error(err.toString());
                 });
@@ -207,8 +235,7 @@
         for (var i = 0; i < Object.keys(jsonObj).length; i++) {
             for (var j = 0; j < Object.keys(jsonObj).length; j++) {
                 var v = i * Object.keys(jsonObj).length + j;
-                //if (distancies[v] == undefined)
-                getMatch(i, j, v);
+                setTimeout(getMatch(i, j, v), 5000);
             }
         }
 
@@ -217,12 +244,17 @@
     function AddVehicle() {
         $("#modals").append('<div class="modal-body" id="vehiclePlace"></div>');
         vhlCounter++;
-        $("#vehiclePlace").append('<label style="font-weight: bold;" class="one">' + vhlCounter +
-            '. Вместимость грузовика: </label><input type="number" class="inputClass one" id="maxVehicle' + vhlCounter + '">' +
-            '<button type="button" onclick="DeleteVehicle();" class="btn btn-secondary three">Удалить</button><br/><br/>');
+        $("#vehiclePlace").append('<label style="font-weight: bold;" class="one" id="label' +vhlCounter +'" ' + '>' + vhlCounter +
+            '. Вместимость грузовика: </label><input type="number" min="0" class="inputClass one" id="maxVehicle' + vhlCounter + '">' +
+            '<button '+ 'id="' +vhlCounter + '" ' + ' type="button" onclick="DeleteVehicle();" ' +
+            'class="btn btn-secondary three">Удалить</button><br/><br/>');
     }
 
     function DeleteVehicle() {
+        var idVehicle = event.currentTarget.id.toString();
+        document.getElementById("label" + idVehicle).remove();
+        document.getElementById("maxVehicle" + idVehicle).remove();
+        event.currentTarget.remove();
     }
 
     function ClearVehicles() {
@@ -256,13 +288,13 @@
             var jsonResponse = req.response;
             var distance = jsonResponse.routes[0].distance * 0.001;
             var duration = jsonResponse.routes[0].duration / 60;
-            var steps = jsonResponse.routes[0].legs[0].steps;
             var coords = jsonResponse.routes[0].geometry;
             //console.log(steps);
             //console.log(coords);
             //console.log(distance);
             //console.log(duration);
             distancies[v] = distance;
+            durations[v] = duration;
             coordsbetweencoords[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = coords;
             tripDirections[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] =
                 getInstructions(jsonResponse.routes[0], q);
@@ -323,12 +355,18 @@
         count = 0;
         layerNames = [];
         document.getElementById("Cost").textContent = "";
+        ClearVehicles();
+        $("div#state-legend").remove();
     }
 
     function saveInstructions() {
         saveDirections = [coordinates.length];
         for (var i = 0; i < coordinates.length; i++) {
-            saveDirections[i] = "Vehicle " + (i + 1).toString() + ":\n";
+            saveDirections[i] =
+                "\n\n------------------------------------------------------------------------------------------------------" +
+                "------------------------------------------------------------------------------------------------------" +
+                "------------------------------------------------------------------------------------------------------\n\n";
+            saveDirections[i] += "Vehicle " + (i + 1).toString() + ":\n";
             for (var k = 0; k < coordinates[i].length - 2; k += 2) {
                 saveDirections[i] += tripDirections[coordinates[i][k].toString() + coordinates[i][k + 2].toString()];
             }
@@ -343,10 +381,15 @@
     }
 
     connection.on("ReceiveMessage",
-        function(jsonResult, cost) {
+        function (jsonResult, cost) {
+            if (jsonResult === 0) {
+                alert("Введите больше транспортных средств либо увеличьте вместимость имеющихся");
+                return;
+            }
             clearLayers();
             layerNames = [coordinates.length];
             coordinates = JSON.parse(jsonResult);
+
             for (var i = 0; i < coordinates.length; i++) {
                 var buf = new Array();
                 var cccount = 0;
@@ -395,10 +438,15 @@
                         "line-width": 8
                     }
                 });
+                $("#state-legend").append("<div id='legend"+ i+1 +"'><span style='background-color: " +
+                    colorArray[i] +
+                    "'></span>Vehicle " +
+                    (i+1).toString() +
+                    "</div>");
                 //console.log(buf);
             }
 
-            document.getElementById("Cost").textContent = "Cost: " + cost;
+            document.getElementById("Cost").textContent = "Стоимость маршрута: " + cost + "км";
             document.getElementById("Cost").style.backgroundColor = "#5181b8";
             document.getElementById("Cost").style.color = "white";
         });

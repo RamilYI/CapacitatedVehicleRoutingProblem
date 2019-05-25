@@ -240,12 +240,12 @@ namespace TestMapBox.SolutionClasses
 
                     if (SwapRouteFrom == SwapRouteTo)
                     {
-                        if (SwapIndexA < SwapIndexB) RouteTo.Insert(SwapIndexB, swapNode); // [SwapIndexB] = swapNode;
-                        else RouteTo.Insert(SwapIndexB + 1, swapNode); //RouteTo[SwapIndexB + 1] = swapNode;
+                        if (SwapIndexA < SwapIndexB) RouteTo.Insert(SwapIndexB, swapNode);
+                        else RouteTo.Insert(SwapIndexB + 1, swapNode); 
                     }
                     else
                     {
-                        RouteTo.Insert(SwapIndexB + 1, swapNode); //RouteTo[SwapIndexB] = swapNode;
+                        RouteTo.Insert(SwapIndexB + 1, swapNode); 
                     }
 
                     this.Vehicles[SwapRouteFrom].Route = RouteFrom;
