@@ -28,7 +28,7 @@ namespace TestMapBox.Hubs
             var random = new Random();
             CreateCustomers(coordinates, customers, random, Convert.ToInt32(maxDemand));
             var vehicleArr = JsonConvert.DeserializeObject<int[]>(vehicle);
-            var durationsArr = JsonConvert.DeserializeObject<double[]>(durationsSend);
+            //var durationsArr = JsonConvert.DeserializeObject<double[]>(durationsSend);
             var s = new Solution(coordinates.Count, vehicleArr.Length, vehicleArr);
             var distanceMatrix = new decimal[coordinates.Count, coordinates.Count];
             CalcDistancies(coordinates, distanceMatrix, distanceSend);
@@ -86,7 +86,7 @@ namespace TestMapBox.Hubs
         {
             for (var i = 0; i < coordinates.Count; i++)
                 customers[i] = new Customer(i, coordinates[i].lng, coordinates[i].lat,
-                    random.Next(1, demand));
+                    ForecastingDemand.DoubleExponentialSmoothing(ForecastingDemand.GenerateRandomDemand(demand), 0.9, 0.9));
         }
 
         private static void JsonProcessing(List<Coordinate> coordinates, string json)

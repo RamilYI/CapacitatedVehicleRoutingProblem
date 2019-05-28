@@ -129,11 +129,11 @@ namespace TestMapBox.SolutionClasses
 
             int SwapIndexA = -1, SwapIndexB = -1, SwapRouteFrom = -1, SwapRouteTo = -1;
 
-            int MAX_ITERATIONS = 400;
+            int MAX_ITERATIONS = 5;
             int iteration_number = 0;
             bool neightboor = false;
             int dimensionCustomer = distanceMatrix.GetLength(0);
-            int TABU_Horizon = NoOfCustomers;
+            int TABU_Horizon = 10;
             int[,] tabuMatrix = new int[dimensionCustomer + 1, dimensionCustomer + 1];
             BestSolutionCost = this.Cost;
 

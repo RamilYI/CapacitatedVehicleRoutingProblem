@@ -180,7 +180,6 @@
     var durations = [];
     var coordsbetweencoords = {};
     var count = 0;
-    var check
     var clientsCount = 0;
     var vhlCounter = 0;
     var tripDirections = {};
@@ -235,7 +234,8 @@
         for (var i = 0; i < Object.keys(jsonObj).length; i++) {
             for (var j = 0; j < Object.keys(jsonObj).length; j++) {
                 var v = i * Object.keys(jsonObj).length + j;
-                setTimeout(getMatch(i, j, v), 5000);
+                if (v > 100) setTimeout(getMatch(i, j, v), 5000);
+                else getMatch(i, j, v);
             }
         }
 
@@ -302,7 +302,6 @@
             if (clientsCount === Math.pow(Object.keys(jsonObj).length - 1, 2)) alert("Клиенты добавлены");
         };
         req.send();
-
     }
 
     connection.start().then(function() {
