@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json;
 using TestMapBox.HelperClasses;
 using TestMapBox.Models;
@@ -20,7 +15,7 @@ namespace TestMapBox.Hubs
     public class CalculateRoute : Hub
     {
         public async Task SendMessage(string vehicle, string maxDemand, string jsonObj,
-            string distanceSend, string durationsSend)
+            string distanceSend)
         {
             var coordinates = new List<Coordinate>();
             JsonProcessing(coordinates, jsonObj);
@@ -28,7 +23,6 @@ namespace TestMapBox.Hubs
             var random = new Random();
             CreateCustomers(coordinates, customers, random, Convert.ToInt32(maxDemand));
             var vehicleArr = JsonConvert.DeserializeObject<int[]>(vehicle);
-            //var durationsArr = JsonConvert.DeserializeObject<double[]>(durationsSend);
             var s = new Solution(coordinates.Count, vehicleArr.Length, vehicleArr);
             var distanceMatrix = new decimal[coordinates.Count, coordinates.Count];
             CalcDistancies(coordinates, distanceMatrix, distanceSend);
@@ -49,10 +43,12 @@ namespace TestMapBox.Hubs
             CreateResultArray(vehicles, coordinates, coordinatearrays);
             var cost = s.GetCost();
             var json = JsonConvert.SerializeObject(coordinatearrays);
-            await Clients.All.SendAsync("ReceiveMessage", json, Math.Round(cost, 2).ToString());
+            await Clients.All.SendAsync("ReceiveMessage", json,
+                Math.Round(cost, 2).ToString(CultureInfo.InvariantCulture));
         }
 
-        private static void CreateResultArray(Vehicle[] vehicles, List<Coordinate> coordinates, List<List<decimal>> coordinatearrays)
+        private static void CreateResultArray(Vehicle[] vehicles, List<Coordinate> coordinates,
+            List<List<decimal>> coordinatearrays)
         {
             for (var j = 0; j < vehicles.Length; j++)
                 if (vehicles[j].Route.Count != 0)
@@ -86,7 +82,8 @@ namespace TestMapBox.Hubs
         {
             for (var i = 0; i < coordinates.Count; i++)
                 customers[i] = new Customer(i, coordinates[i].lng, coordinates[i].lat,
-                    ForecastingDemand.DoubleExponentialSmoothing(ForecastingDemand.GenerateRandomDemand(demand), 0.9, 0.9));
+                    ForecastingDemand.DoubleExponentialSmoothing(ForecastingDemand.GenerateRandomDemand(demand), 0.9,
+                        0.9));
         }
 
         private static void JsonProcessing(List<Coordinate> coordinates, string json)

@@ -10,88 +10,7 @@
     <link href="https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.0.9/mapbox-gl-draw.css" type="text/css"/>
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v2.3.0/mapbox-gl-geocoder.css" type="text/css"/>
-
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-
-        #map {
-            bottom: 0;
-            position: absolute;
-            top: 0;
-            width: 100%;
-        }
-
-        #info {
-            background: #fff;
-            border: none;
-            border-radius: 3px;
-            color: #222;
-            display: block;
-            font-size: 12px;
-            margin: 0px auto;
-            padding: 10px;
-            position: relative;
-            text-align: center;
-            width: 50%;
-        }
-
-        .form-submit-button {
-            background: #5181b8;
-            border-color: #5181b8;
-            border-style: outset;
-            color: white;
-            font: bold 15px arial, sans-serif;
-            height: 30px;
-            text-shadow: none;
-            width: 200px;
-        }
-
-
-        .inputClass {
-            background: #FFF;
-            border: 1px solid #9E9E9E;
-            color: #000000;
-            font-family: Verdana;
-            font-size: 11px;
-            margin-bottom: 2px;
-            margin-top: 2px;
-            padding: 3px;
-            width: 120px;
-        }
-
-        .topcorner {
-            position: absolute;
-            right: 10px;
-            top: 15px;
-        }
-
-        .one, .two .three { float: left; }
-
-        .one { margin-right: 5px; }
-
-        .legend {
-            background-color: #fff;
-            border-radius: 7px;
-            bottom: 30px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
-            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
-            left: 30px;
-            padding: 10px;
-            position: absolute;
-            z-index: 1;
-        }
-
-        .legend div span {
-            border-radius: 50%;
-            display: inline-block;
-            height: 10px;
-            margin-right: 5px;
-            width: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="lib/css/StyleSheet.css" type="text/css"/>
 </head>
 <body>
 
@@ -110,13 +29,14 @@
     <input type="number" class="inputClass" id="maxVehicle">
     <br />
     <br />-->
-    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+
+    <input type="button" class="btn btn-primary" value="Добавить клиентов" onclick="getMatchAll();"/>
+    <br/><br/>
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#vehicleModal">
         Добавить грузовики
     </button>
     <br/>
     <br/>
-    <input type="button" class="btn btn-primary" value="Добавить клиентов" onclick="getMatchAll();"/>
-    <br/><br/>
     <label style="background: #5181b8; color: white; font-weight: bold;">Максимальный спрос клиентов:</label>
     <br/>
     <input type="number" class="inputClass" min="0" id="maxDemand">
@@ -137,11 +57,11 @@
 </div>
 
 <!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="vehicleModal" tabindex="-1" role="dialog" aria-labelledby="vehicleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div id="modals" class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Добавление грузовиков</h5>
+                <h5 class="modal-title" id="vehicleModalLabel">Добавление грузовиков</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -187,7 +107,6 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
-
 <script>
     mapboxgl.accessToken = '@Model.MapboxAccessToken';
     var map = new mapboxgl.Map({
@@ -201,14 +120,14 @@
     var distancies = [];
     var durations = [];
     var coordsbetweencoords = {};
-    var count = 0;
+    var markerCount = 0;
     var clientsCount = 0;
     var vhlCounter = 0;
     var tripDirections = {};
     var saveDirections = [];
     var vehiclesCapacity = [];
     var nav = new mapboxgl.NavigationControl();
-    var jsonObj = {};
+    var markerCoords = {};
     var colorArray = [
         '#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
         '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
@@ -234,17 +153,17 @@
             if (clientsCount == 0 || vehiclesCapacity.length == 0) {
                 alert("Добавьте клиентов и транспортные средства");
                 return;
-            } else if (clientsCount < Math.pow(Object.keys(jsonObj).length - 1, 2)) {
+            } else if (clientsCount < Math.pow(Object.keys(markerCoords).length - 1, 2)) {
                 alert("Ещё не все клиенты добавлены");
                 return;
             }
             //var vehicle = document.getElementById("vehicleCount").value;
             var vehicle = JSON.stringify(vehiclesCapacity);
             var maxDemand = document.getElementById("maxDemand").value;
-            var jsonSend = JSON.stringify(jsonObj).toString();
+            var jsonSend = JSON.stringify(markerCoords).toString();
             var distanceSend = distancies.toString();
-            var durationsSend = JSON.stringify(durations);
-            connection.invoke("SendMessage", vehicle, maxDemand, jsonSend, distanceSend, durationsSend).catch(
+            //var durationsSend = JSON.stringify(durations);
+            connection.invoke("SendMessage", vehicle, maxDemand, jsonSend, distanceSend).catch(
                 function(err) {
                     return console.error(err.toString());
                 });
@@ -282,15 +201,14 @@
 
     function getMatchAll() {
         clientsCount = 0;
-        for (var i = 0; i < Object.keys(jsonObj).length; i++) {
-            for (var j = 0; j < Object.keys(jsonObj).length; j++) {
-                var v = i * Object.keys(jsonObj).length + j;
+        for (var i = 0; i < Object.keys(markerCoords).length; i++) {
+            for (var j = 0; j < Object.keys(markerCoords).length; j++) {
+                var v = i * Object.keys(markerCoords).length + j;
                 if (v > 300) setTimeout(getMatch(i, j, v), 12000);
                 else if (v > 100) setTimeout(getMatch(i, j, v), 6000);
                 else getMatch(i, j, v);
             }
         }
-
     }
 
     function AddVehicle() {
@@ -333,13 +251,13 @@
 
     function getMatch(e, q, v) {
         var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' +
-            jsonObj[e].lng +
+            markerCoords[e].lng +
             ',' +
-            jsonObj[e].lat +
+            markerCoords[e].lat +
             ';' +
-            jsonObj[q].lng +
+            markerCoords[q].lng +
             ',' +
-            jsonObj[q].lat +
+            markerCoords[q].lat +
             '?geometries=geojson&steps=true&access_token=' +
             mapboxgl.accessToken;
         //console.log(url);
@@ -356,12 +274,12 @@
             //console.log(distance);
             //console.log(duration);
             distancies[v] = distance;
-            durations[v] = duration;
-            coordsbetweencoords[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] = coords;
-            tripDirections[jsonObj[e].lng.toString() + jsonObj[q].lng.toString()] =
+            //durations[v] = duration;
+            coordsbetweencoords[markerCoords[e].lng.toString() + markerCoords[q].lng.toString()] = coords;
+            tripDirections[markerCoords[e].lng.toString() + markerCoords[q].lng.toString()] =
                 getInstructions(jsonResponse.routes[0], q);
             clientsCount++;
-            if (clientsCount === Math.pow(Object.keys(jsonObj).length - 1, 2)) alert("Клиенты добавлены");
+            if (clientsCount === Math.pow(Object.keys(markerCoords).length - 1, 2)) alert("Клиенты добавлены");
         };
         req.send();
     }
@@ -390,7 +308,6 @@
         var directions = [];
         var legs = data.legs;
         var stepCount = 0;
-        // Output the instructions for each step of each leg in the response object
         for (var i = 0; i < legs.length; i++) {
             var steps = legs[i].steps;
             for (var j = 0; j < steps.length; j++) {
@@ -398,9 +315,9 @@
                 stepCount++;
             }
             directions.push("Вы добрались до (" +
-                jsonObj[q].lng.toString() +
+                markerCoords[q].lng.toString() +
                 ";" +
-                jsonObj[q].lat.toString() +
+                markerCoords[q].lat.toString() +
                 ") точки.\n");
         }
         return directions;
@@ -410,10 +327,10 @@
         clearLayers();
         coordMarkers.forEach((m) => m.remove());
         coordMarkers = [];
-        jsonObj = {};
+        markerCoords = {};
         distancies = [];
         coordsbetweencoords = {};
-        count = 0;
+        markerCount = 0;
         layerNames = [];
         document.getElementById("Cost").textContent = "";
         ClearVehicles();
@@ -439,11 +356,10 @@
         a.href = URL.createObjectURL(file);
         a.download = "instructions.doc";
         a.click();
-        //return saveDirections;
     }
 
-    connection.on("ReceiveMessage",
-        function(jsonResult, cost) {
+        connection.on("ReceiveMessage",
+        function (jsonResult, cost) {
             if (jsonResult === 0) {
                 alert("Введите больше транспортных средств либо увеличьте вместимость имеющихся");
                 return;
@@ -451,29 +367,28 @@
             clearLayers();
             layerNames = [coordinates.length];
             coordinates = JSON.parse(jsonResult);
-
             for (var i = 0; i < coordinates.length; i++) {
                 var buf = new Array();
-                var cccount = 0;
-                var count2 = 0;
+                var resultCoordCount = 0;
+                var routeOrder = 0;
                 for (var k = 0; k < coordinates[i].length - 2; k += 2) {
-                    buf[cccount] = [coordinates[i][k], coordinates[i][k + 1]];
-                    count2++;
+                    buf[resultCoordCount] = [coordinates[i][k], coordinates[i][k + 1]];
+                    routeOrder++;
                     var el = document.createElement('div');
                     el.className = 'marker';
-                    el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + count2 + '</b></span>';
+                    el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + routeOrder + '</b></span>';
                     el.fontSize = "large";
                     marker.push(
                         new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));
-                    cccount++;
+                    resultCoordCount++;
                     var coordCount =
                         coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
                             .length;
                     for (var z = 0; z < coordCount; z++) {
-                        buf[cccount] =
+                        buf[resultCoordCount] =
                             coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()]
                             .coordinates[z];
-                        cccount += 1;
+                        resultCoordCount += 1;
                     }
                 }
                 layerNames[i] = i;
@@ -501,17 +416,13 @@
                     }
                 });
                 $("#state-legend").css('visibility', 'visible');
-                $("#state-legend").append("<div id='legend" +
-                    i +
-                    1 +
-                    "'><span style='background-color: " +
+                $("#state-legend").append("<div id='legend"+ i+1 +"'><span style='background-color: " +
                     colorArray[i] +
                     "'></span>Vehicle " +
-                    (i + 1).toString() +
+                    (i+1).toString() +
                     "</div>");
                 //console.log(buf);
             }
-
             document.getElementById("Cost").textContent = "Стоимость маршрута: " + cost + "км";
             document.getElementById("Cost").style.backgroundColor = "#5181b8";
             document.getElementById("Cost").style.color = "white";
@@ -537,14 +448,14 @@
                 function(e) {
                     clientsCount = 0;
                     var marker;
-                    if (count === 0) {
+                    if (markerCount === 0) {
                         marker = new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
                     } else {
                         marker = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
                     }
                     coordMarkers.push(marker);
-                    jsonObj[count] = e.lngLat;
-                    count++;
+                    markerCoords[markerCount] = e.lngLat;
+                    markerCount++;
                 });
         });
 </script>

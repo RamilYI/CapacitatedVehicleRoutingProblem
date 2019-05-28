@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using TestMapBox.HelperClasses;
 
@@ -9,13 +8,15 @@ namespace TestMapBox.SolutionClasses
 {
     internal class Solution
     {
-        private int NoOfVehicles, NoOfCustomers;
+        private readonly int NoOfVehicles;
+        private readonly int NoOfCustomers;
         private Vehicle[] Vehicles;
         private decimal Cost;
 
         private decimal greedySolCost;
+
         //Tabu Search variables
-        decimal BestSolutionCost;
+        private decimal BestSolutionCost;
         public Vehicle[] vehiclesForBestSolution;
         public List<decimal> pastSolutions = new List<decimal>();
 
@@ -27,7 +28,7 @@ namespace TestMapBox.SolutionClasses
             Vehicles = new Vehicle[NoOfVehicles];
 
             vehiclesForBestSolution = new Vehicle[NoOfVehicles];
-            
+
             InitVehicles(vehicles);
         }
 
@@ -122,167 +123,158 @@ namespace TestMapBox.SolutionClasses
             List<Customer> RouteFrom;
             List<Customer> RouteTo;
 
-            int MovingNodeDemand = 0;
+            var MovingNodeDemand = 0;
 
             int VehIndexFrom, VehIndexTo;
             decimal BestNCost, NeightborCost;
 
             int SwapIndexA = -1, SwapIndexB = -1, SwapRouteFrom = -1, SwapRouteTo = -1;
 
-            int MAX_ITERATIONS = 400;
-            int iteration_number = 0;
-            bool neightboor = false;
-            int dimensionCustomer = distanceMatrix.GetLength(0);
-            int TABU_Horizon = NoOfCustomers;
-            int[,] tabuMatrix = new int[dimensionCustomer + 1, dimensionCustomer + 1];
-            BestSolutionCost = this.Cost;
+            var MAX_ITERATIONS = 400;
+            var iteration_number = 0;
+            var neightboor = false;
+            var dimensionCustomer = distanceMatrix.GetLength(0);
+            var TABU_Horizon = NoOfCustomers;
+            var tabuMatrix = new int[dimensionCustomer + 1, dimensionCustomer + 1];
+            BestSolutionCost = Cost;
 
             while (true)
             {
                 iteration_number++;
                 BestNCost = decimal.MaxValue;
 
-                for (VehIndexFrom = 0; VehIndexFrom < this.Vehicles.Length; VehIndexFrom++)
+                for (VehIndexFrom = 0; VehIndexFrom < Vehicles.Length; VehIndexFrom++)
                 {
-                    RouteFrom = this.Vehicles[VehIndexFrom].Route;
-                    int routeFromLength = RouteFrom.Count;
+                    RouteFrom = Vehicles[VehIndexFrom].Route;
+                    var routeFromLength = RouteFrom.Count;
 
-                    for (int i = 1; i < routeFromLength - 1; i++)
+                    for (var i = 1; i < routeFromLength - 1; i++)
+                    for (VehIndexTo = 0; VehIndexTo < Vehicles.Length; VehIndexTo++)
                     {
-                        for (VehIndexTo = 0; VehIndexTo < this.Vehicles.Length; VehIndexTo++)
+                        RouteTo = Vehicles[VehIndexTo].Route;
+                        var routeToLength = RouteTo.Count;
+                        for (var j = 0; j < routeToLength - 1; j++)
                         {
-                            RouteTo = this.Vehicles[VehIndexTo].Route;
-                            int routeToLength = RouteTo.Count;
-                            for (int j = 0; j < routeToLength - 1; j++)
-                            {
-                                MovingNodeDemand = RouteFrom[i].Demand;
+                            MovingNodeDemand = RouteFrom[i].Demand;
 
-                                if ((VehIndexFrom == VehIndexTo) ||
-                                    this.Vehicles[VehIndexTo].CheckIfFits(MovingNodeDemand))
+                            if (VehIndexFrom == VehIndexTo ||
+                                Vehicles[VehIndexTo].CheckIfFits(MovingNodeDemand))
+                                if ((VehIndexFrom == VehIndexTo && (j == i || j == i - 1)) == false)
                                 {
-                                    if (((VehIndexFrom == VehIndexTo) && ((j == i) || (j == i - 1))) == false)
+                                    if (tabuMatrix[RouteFrom[i - 1].CustomerId, RouteFrom[i + 1].CustomerId] != 0
+                                        || tabuMatrix[RouteTo[j].CustomerId, RouteFrom[i].CustomerId] != 0
+                                        || tabuMatrix[RouteFrom[i].CustomerId, RouteTo[j + 1].CustomerId] != 0)
+                                        break;
+
+                                    var minusCost1 = distanceMatrix[RouteFrom[i - 1].CustomerId,
+                                        RouteFrom[i].CustomerId];
+                                    var minusCost2 = distanceMatrix[RouteFrom[i].CustomerId,
+                                        RouteFrom[i + 1].CustomerId];
+                                    var minusCost3 = distanceMatrix[RouteTo[j].CustomerId,
+                                        RouteTo[j + 1].CustomerId];
+
+                                    var addedCost1 = distanceMatrix[RouteFrom[i - 1].CustomerId,
+                                        RouteFrom[i + 1].CustomerId];
+                                    var addedCost2 = distanceMatrix[RouteTo[j].CustomerId,
+                                        RouteFrom[i].CustomerId];
+                                    var addedCost3 = distanceMatrix[RouteFrom[i].CustomerId,
+                                        RouteTo[j + 1].CustomerId];
+
+
+                                    NeightborCost = addedCost1 + addedCost2 + addedCost3
+                                                    - minusCost1 - minusCost2 - minusCost3;
+
+                                    if (NeightborCost < BestNCost)
                                     {
-                                        if ((tabuMatrix[RouteFrom[i - 1].CustomerId, RouteFrom[i + 1].CustomerId] != 0)
-                                            || (tabuMatrix[RouteTo[j].CustomerId, RouteFrom[i].CustomerId] != 0)
-                                            || (tabuMatrix[RouteFrom[i].CustomerId, RouteTo[j + 1].CustomerId] != 0))
-                                            break;
-
-                                        decimal minusCost1 = distanceMatrix[RouteFrom[i - 1].CustomerId,
-                                            RouteFrom[i].CustomerId];
-                                        decimal minusCost2 = distanceMatrix[RouteFrom[i].CustomerId,
-                                            RouteFrom[i + 1].CustomerId];
-                                        decimal minusCost3 = distanceMatrix[RouteTo[j].CustomerId,
-                                            RouteTo[j + 1].CustomerId];
-
-                                        decimal addedCost1 = distanceMatrix[RouteFrom[i - 1].CustomerId,
-                                            RouteFrom[i + 1].CustomerId];
-                                        decimal addedCost2 = distanceMatrix[RouteTo[j].CustomerId,
-                                            RouteFrom[i].CustomerId];
-                                        decimal addedCost3 = distanceMatrix[RouteFrom[i].CustomerId,
-                                            RouteTo[j + 1].CustomerId];
-
-
-
-                                        NeightborCost = addedCost1 + addedCost2 + addedCost3
-                                                        - minusCost1 - minusCost2 - minusCost3;
-
-                                        if (NeightborCost < BestNCost)
-                                        {
-                                            BestNCost = NeightborCost;
-                                            SwapIndexA = i;
-                                            SwapIndexB = j;
-                                            SwapRouteFrom = VehIndexFrom;
-                                            SwapRouteTo = VehIndexTo;
-                                        }
+                                        BestNCost = NeightborCost;
+                                        SwapIndexA = i;
+                                        SwapIndexB = j;
+                                        SwapRouteFrom = VehIndexFrom;
+                                        SwapRouteTo = VehIndexTo;
                                     }
                                 }
-                            }
                         }
                     }
                 }
+
                 if (BestNCost == decimal.MaxValue && iteration_number == MAX_ITERATIONS) break;
                 if (BestNCost == decimal.MaxValue) continue;
 
 
-                for (int o = 0; o < tabuMatrix.GetLength(1); o++)
-                    {
-                        for (int p = 0; p < tabuMatrix.GetLength(1); p++)
-                        {
-                            if (tabuMatrix[o, p] > 0)
-                            {
-                                tabuMatrix[o, p]--;
-                            }
-                        }
-                    }
+                for (var o = 0; o < tabuMatrix.GetLength(1); o++)
+                for (var p = 0; p < tabuMatrix.GetLength(1); p++)
+                    if (tabuMatrix[o, p] > 0)
+                        tabuMatrix[o, p]--;
 
-                    RouteFrom = this.Vehicles[SwapRouteFrom].Route;
-                    RouteTo = this.Vehicles[SwapRouteTo].Route;
-                    this.Vehicles[SwapRouteTo].Route = null;
-                    this.Vehicles[SwapRouteFrom].Route = null;
+                RouteFrom = Vehicles[SwapRouteFrom].Route;
+                RouteTo = Vehicles[SwapRouteTo].Route;
+                Vehicles[SwapRouteTo].Route = null;
+                Vehicles[SwapRouteFrom].Route = null;
 
-                    Customer swapNode = RouteFrom[SwapIndexA];
-                    int nodeIdBefore = RouteFrom[SwapIndexA - 1].CustomerId;
-                    int nodeIdAfter = RouteFrom[SwapIndexA + 1].CustomerId;
-                    int nodeId_F = RouteTo[SwapIndexB].CustomerId;
-                    int nodeId_G = RouteTo[SwapIndexB + 1].CustomerId;
+                var swapNode = RouteFrom[SwapIndexA];
+                var nodeIdBefore = RouteFrom[SwapIndexA - 1].CustomerId;
+                var nodeIdAfter = RouteFrom[SwapIndexA + 1].CustomerId;
+                var nodeId_F = RouteTo[SwapIndexB].CustomerId;
+                var nodeId_G = RouteTo[SwapIndexB + 1].CustomerId;
 
-                    Random tabuRandom = new Random();
+                var tabuRandom = new Random();
 
-                    int randomDelay1 = tabuRandom.Next(5);
-                    int randomDelay2 = tabuRandom.Next(5);
-                    int randomDelay3 = tabuRandom.Next(5);
+                var randomDelay1 = tabuRandom.Next(5);
+                var randomDelay2 = tabuRandom.Next(5);
+                var randomDelay3 = tabuRandom.Next(5);
 
-                    tabuMatrix[nodeIdBefore, swapNode.CustomerId] = TABU_Horizon + randomDelay1;
-                    tabuMatrix[swapNode.CustomerId, nodeIdAfter] = TABU_Horizon + randomDelay2;
-                    tabuMatrix[nodeId_F, nodeId_G] = TABU_Horizon + randomDelay3;
+                tabuMatrix[nodeIdBefore, swapNode.CustomerId] = TABU_Horizon + randomDelay1;
+                tabuMatrix[swapNode.CustomerId, nodeIdAfter] = TABU_Horizon + randomDelay2;
+                tabuMatrix[nodeId_F, nodeId_G] = TABU_Horizon + randomDelay3;
 
-                    RouteFrom.RemoveAt(SwapIndexA);
+                RouteFrom.RemoveAt(SwapIndexA);
 
-                    if (SwapRouteFrom == SwapRouteTo)
-                    {
-                        if (SwapIndexA < SwapIndexB) RouteTo.Insert(SwapIndexB, swapNode);
-                        else RouteTo.Insert(SwapIndexB + 1, swapNode); 
-                    }
-                    else
-                    {
-                        RouteTo.Insert(SwapIndexB + 1, swapNode); 
-                    }
+                if (SwapRouteFrom == SwapRouteTo)
+                {
+                    if (SwapIndexA < SwapIndexB) RouteTo.Insert(SwapIndexB, swapNode);
+                    else RouteTo.Insert(SwapIndexB + 1, swapNode);
+                }
+                else
+                {
+                    RouteTo.Insert(SwapIndexB + 1, swapNode);
+                }
 
-                    this.Vehicles[SwapRouteFrom].Route = RouteFrom;
-                    this.Vehicles[SwapRouteFrom].Load -= MovingNodeDemand;
+                Vehicles[SwapRouteFrom].Route = RouteFrom;
+                Vehicles[SwapRouteFrom].Load -= MovingNodeDemand;
 
-                    this.Vehicles[SwapRouteTo].Route = RouteTo;
-                    this.Vehicles[SwapRouteTo].Load += MovingNodeDemand;
+                Vehicles[SwapRouteTo].Route = RouteTo;
+                Vehicles[SwapRouteTo].Load += MovingNodeDemand;
 
-                    pastSolutions.Add(this.Cost);
-                    this.Cost += BestNCost;
-                    if (this.Cost < BestSolutionCost)
-                    {
+                pastSolutions.Add(Cost);
+                Cost += BestNCost;
+                if (Cost < BestSolutionCost)
+                {
                     neightboor = true;
                     SaveBestSolution();
-                    }
-                
+                }
+
 
                 if (iteration_number == MAX_ITERATIONS) break;
             }
-            if (neightboor) this.Vehicles = vehiclesForBestSolution;
-            this.Cost = BestSolutionCost;
+
+            if (neightboor) Vehicles = vehiclesForBestSolution;
+            Cost = BestSolutionCost;
         }
 
         public void SaveBestSolution()
         {
             BestSolutionCost = Cost;
 
-            for (int i = 0; i < NoOfVehicles; i++)
+            for (var i = 0; i < NoOfVehicles; i++)
             {
                 vehiclesForBestSolution[i].Route.Clear();
                 if (Vehicles[i].Route.Count != 0)
                 {
-                    int RouteSize = Vehicles[i].Route.Count;
+                    var RouteSize = Vehicles[i].Route.Count;
 
-                    for (int k = 0; k < RouteSize; k++)
+                    for (var k = 0; k < RouteSize; k++)
                     {
-                        Customer n = Vehicles[i].Route[k];
+                        var n = Vehicles[i].Route[k];
                         vehiclesForBestSolution[i].Route.Add(n);
                     }
                 }
@@ -291,30 +283,30 @@ namespace TestMapBox.SolutionClasses
 
         public void PrintSolution()
         {
-            StringBuilder text = new StringBuilder();
+            var text = new StringBuilder();
             for (var j = 0; j < NoOfVehicles; j++)
-            {
                 if (Vehicles[j].Route.Count != 0)
                 {
-                text.Append("Vehicle " + j + ":");
-                var routeSize = Vehicles[j].Route.Count;
-                for (var k = 0; k < routeSize; k++)
-                    if (k == routeSize - 1)
-                        text.Append("(" + Vehicles[j].Route[k].X + ";" + Vehicles[j].Route[k].Y + ")");
-                    else
-                        text.Append("(" + Vehicles[j].Route[k].X + ";" + Vehicles[j].Route[k].Y + ")" + "->");
-                text.Append('\n');
+                    text.Append("Vehicle " + j + ":");
+                    var routeSize = Vehicles[j].Route.Count;
+                    for (var k = 0; k < routeSize; k++)
+                        if (k == routeSize - 1)
+                            text.Append("(" + Vehicles[j].Route[k].X + ";" + Vehicles[j].Route[k].Y + ")");
+                        else
+                            text.Append("(" + Vehicles[j].Route[k].X + ";" + Vehicles[j].Route[k].Y + ")" + "->");
+                    text.Append('\n');
                 }
-            }
 
             text.Append("\n\n\nTabuSearch Cost " + Cost + "\n");
             text.Append("\n\n\nGreedy Cost " + greedySolCost + "\n");
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(KnownFolders.GetPath(KnownFolder.Downloads), "Results.txt")))
+            using (var outputFile =
+                new StreamWriter(Path.Combine(KnownFolders.GetPath(KnownFolder.Downloads), "Results.txt")))
             {
                 outputFile.Write(text);
             }
 
-            var results = File.Open(Path.Combine(KnownFolders.GetPath(KnownFolder.Downloads), "Results.txt"), FileMode.Open);
+            var results = File.Open(Path.Combine(KnownFolders.GetPath(KnownFolder.Downloads), "Results.txt"),
+                FileMode.Open);
             results.Close();
         }
     }
