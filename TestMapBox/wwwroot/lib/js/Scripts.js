@@ -13,7 +13,7 @@ var coordsbetweencoords = {};
 var markerCount = 0;
 var clientsCount = 0;
 var vhlCounter = 0;
-var t;
+var dmdCounter = 0;
 var tripDirections = {};
 var saveDirections = [];
 var vehiclesCapacity = [];
@@ -34,6 +34,8 @@ var colorArray = [
 var coordinates = [];
 var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 var marker = [];
+var requireCount = 0;
+var markerMonicker = [];
 var coordMarkers = [];
 var layerNames = [];
 document.getElementById("sendButton").disabled = true;
@@ -90,16 +92,51 @@ document.getElementById("sendButton").addEventListener("click",
 //    };
 //});
 
-function getMatchAll() {
+async function getMatchAll() {
     clientsCount = 0;
     for (var i = 0; i < Object.keys(markerCoords).length; i++) {
         for (var j = 0; j < Object.keys(markerCoords).length; j++) {
             var v = i * Object.keys(markerCoords).length + j;
-            if (v > 300) setTimeout(getMatch(i, j, v), 12000);
-            else if (v > 100) setTimeout(getMatch(i, j, v), 6000);
-            else getMatch(i, j, v);
+            //if (v > 300) setTimeout(getMatch(i, j, v), 12000);
+            //else if (v > 100) setTimeout(getMatch(i, j, v), 6000);
+            //else getMatch(i, j, v);
+            requireCount++;
+            if (requireCount >= 299) {
+                await sleep(60000);
+                requireCount = 1;
+            }
+            getMatch(i, j, v);
         }
     }
+}
+
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+//$('#clientModal').on('show.bs.modal',
+//    function (e) {
+//	    for (var i = 0; i < clientsCount; i++) {
+//		    $("#demandModals").append('<div class="modal-body" id="demandPlace"></div>');
+//		    dmdCounter++;
+//		    $("#demandPlace").append('<label style="font-weight: bold;" class="one" id="label' +
+//			    dmdCounter +
+//			    '" ' +
+//			    '>' +
+//			    dmdCounter +
+//			    '. Спрос клиента: </label>' +
+//			    '<input type="file" id="fileInput' +
+//			    dmdCounter +
+//			    '" />');
+//	    }
+//    });
+
+function genRandomDemand() {
+    $("#demandModals").append('<div class="modal-body" id="demandPlace"></div>');
+    $("#demandPlace").append('<label style="font-weight: bold;" class="one" id="labelDemand">'
+	    +
+    'Максимальное спрос клиентов: </label>' +
+    '<input type="number" class="inputClass one" min="0" id="maxDemand" />');
 }
 
 function AddVehicle() {
@@ -158,7 +195,7 @@ function getMatch(e, q, v) {
     req.onload = function () {
         var jsonResponse = req.response;
         var distance = jsonResponse.routes[0].distance * 0.001;
-        var duration = jsonResponse.routes[0].duration / 60;
+        //var duration = jsonResponse.routes[0].duration / 60;
         var coords = jsonResponse.routes[0].geometry;
         //console.log(steps);
         //console.log(coords);
@@ -189,10 +226,7 @@ function clearLayers() {
         } catch (err) {
         }
     }
-    if (marker.length > 0) {
-        marker.forEach((m) => m.remove());
-        marker = [];
-    }
+
 }
 
 function getInstructions(data, q) {
@@ -227,6 +261,10 @@ function clearAllLayers() {
     ClearVehicles();
     $("div#state-legend").empty();
     $("dib#state-legend").css('visibility', 'hidden');
+    if (markerMonicker.length > 0) {
+     markerMonicker.forEach((m) => m.remove());
+     markerMonicker = [];
+    }
 }
 
 function saveInstructions() {
@@ -265,12 +303,20 @@ connection.on("ReceiveMessage",
             for (var k = 0; k < coordinates[i].length - 2; k += 2) {
                 buf[resultCoordCount] = [coordinates[i][k], coordinates[i][k + 1]];
                 routeOrder++;
-                var el = document.createElement('div');
-                el.className = 'marker';
-                el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + routeOrder + '</b></span>';
-                el.fontSize = "large";
-                marker.push(
-                    new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));
+                var idMarker = coordinates[i][k];
+                var searchCoincidence = document.getElementById(idMarker.toString()).innerText.search(":");
+                if (searchCoincidence !== -1)
+                    document.getElementById(idMarker.toString()).innerText =
+	                    document.getElementById(idMarker.toString()).innerText.substring(0,
+		                document.getElementById(idMarker.toString()).innerText.match(":").index);
+                document.getElementById(idMarker.toString()).innerText += ": " + routeOrder;
+                //var el = document.createElement('div');
+                //el.className = 'marker';
+                //el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + routeOrder + '</b></span>';
+                //el.fontSize = "large";
+                //markerMonicker[coordinates[i][k].toString()] += ": " + routeOrder;
+                //marker.push(
+                //    new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));
                 resultCoordCount++;
                 var coordCount =
                     coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
@@ -338,14 +384,27 @@ map.on('load',
         map.on('click',
             function (e) {
                 clientsCount = 0;
-                var marker;
+                var markerDraw;
+                var markerName = document.createElement('div');
+                markerName.className = 'marker';
                 if (markerCount === 0) {
-                    marker = new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
+                    markerDraw = new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
+                    markerName.innerHTML = '<span id="' + e.lngLat.lng + '" style=" font-size: 130%; background: inherit;"><b>Депо</b></span>';
                 } else {
-                    marker = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
+                    markerDraw = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
+                    markerName.innerHTML = '<span id="' + e.lngLat.lng + '" style="font-size: 130%; background: inherit;"><b>v'+ markerCount + '</b></span>';
                 }
-                coordMarkers.push(marker);
+                markerName.fontSize = "large";
+                coordMarkers.push(markerDraw);
                 markerCoords[markerCount] = e.lngLat;
+				markerMonicker.push( 
+				new mapboxgl.Marker(markerName).setLngLat(e.lngLat).addTo(map));
                 markerCount++;
             });
     });
+//var el = document.createElement('div');
+//                el.className = 'marker';
+//el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + routeOrder + '</b></span>';
+//el.fontSize = "large";
+//marker.push(
+//	new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));

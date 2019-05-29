@@ -16,9 +16,9 @@
 
 <div id="map"></div>
 <div class="topcorner">
-    <input type="search" id="address-input" placeholder="Поиск..."/>
-    <br/>
-    <br/>
+    <input type="search" id="address-input" placeholder="Поиск..." />
+    <br />
+    <br />
     <!--<label style="background: #5181b8; color: white; font-weight: bold;">Количество грузовиков:</label>
     <br />
     <input type="number" class="inputClass" id="vehicleCount">
@@ -30,29 +30,28 @@
     <br />
     <br />-->
 
-    <input type="button" class="btn btn-primary" value="Добавить клиентов" onclick="getMatchAll();"/>
-    <br/><br/>
+    <input type="button" class="btn btn-primary" value="Добавить клиентов" onclick="getMatchAll();" />
+    <br /><br />
     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#vehicleModal">
         Добавить грузовики
     </button>
-    <br/>
-    <br/>
-    <label style="background: #5181b8; color: white; font-weight: bold;">Максимальный спрос клиентов:</label>
-    <br/>
+    <br />
+    <br />
+    <!--<label style="background: #5181b8; color: white; font-weight: bold;">Максимальный спрос клиентов:</label>
+    <br />
     <input type="number" class="inputClass" min="0" id="maxDemand">
-    <br/><br/>
-
-    <!--<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#clientModal">
+    <br/><br/>-->
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#clientModal">
         Загрузить спрос клиентов
     </button>
-    <br /><br />-->
-    <input type="button" class="form-submit-button" value="Расчёт" id="sendButton"/>
+    <br /><br />
+    <input type="button" class="form-submit-button" value="Расчёт" id="sendButton" />
 
-    <br/><br/>
-    <input type="button" class="form-submit-button" value="Очистить решение" onclick="clearAllLayers();"/>
-    <br/><br/>
-    <input type="button" class="form-submit-button" value="Сохранить инструкции" onclick="saveInstructions();"/>
-    <br/><br/>
+    <br /><br />
+    <input type="button" class="form-submit-button" value="Очистить решение" onclick="clearAllLayers();" />
+    <br /><br />
+    <input type="button" class="form-submit-button" value="Сохранить инструкции" onclick="saveInstructions();" />
+    <br /><br />
     <label id="Cost"></label>
 </div>
 
@@ -76,10 +75,9 @@
     </div>
 </div>
 
-@*потом допилю*@
-@*<div class="modal fade" id="clientModal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
+<div class="modal fade" id="clientModal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
-        <div id="modals" class="modal-content">
+        <div id="demandModals" class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="clientModalLabel">Добавление спроса клиентам</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -88,11 +86,12 @@
             </div>
 
             <div class="modal-footer">
-                <input type="file" id="fileInput" />
+                <button type="button" class="btn btn-primary" onclick="genRandomDemand();">Сгенерировать</button>
+                <button type="button" class="btn btn-primary" onclick="choiceRealData();">Выбрать реальные данные</button>
             </div>
         </div>
     </div>
-</div>*@
+</div>
 
 <div id="state-legend" style="visibility: hidden" class="legend">
 </div>
