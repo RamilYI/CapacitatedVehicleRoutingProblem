@@ -24,7 +24,6 @@ namespace TestMapBox.HelperClasses
         {
             var level = 0.0;
             var trend = 0.0;
-            var value = 0.0;
             var result = new List<double>();
             result.Add(series[0]);
             for (var i = 1; i < series.Length + 1; i++)
@@ -35,7 +34,7 @@ namespace TestMapBox.HelperClasses
                     trend = series[1] - series[0];
                 }
 
-                value = i >= series.Length ? result.Last() : series[i];
+                var value = i >= series.Length ? result.Last() : series[i];
                 var lastLevel = level;
                 level = alpha * value + (1 - alpha) * (level + trend);
                 trend = beta * (level - lastLevel) + (1 - beta) * trend;

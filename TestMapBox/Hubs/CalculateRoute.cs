@@ -17,11 +17,14 @@ namespace TestMapBox.Hubs
         public async Task SendMessage(string vehicle, string maxDemand, string jsonObj,
             string distanceSend)
         {
+            List<int[]> demandStorage;
             var coordinates = new List<Coordinate>();
             JsonProcessing(coordinates, jsonObj);
+            var demandArr = JsonConvert.DeserializeObject<string[]>(maxDemand);
+            CreateDemandArrays(demandArr, out demandStorage);
             var customers = new Customer[coordinates.Count];
             var random = new Random();
-            CreateCustomers(coordinates, customers, random, Convert.ToInt32(maxDemand));
+            CreateCustomers(coordinates, customers, random, demandStorage);
             var vehicleArr = JsonConvert.DeserializeObject<int[]>(vehicle);
             var s = new Solution(coordinates.Count, vehicleArr.Length, vehicleArr);
             var distanceMatrix = new decimal[coordinates.Count, coordinates.Count];
@@ -45,6 +48,15 @@ namespace TestMapBox.Hubs
             var json = JsonConvert.SerializeObject(coordinatearrays);
             await Clients.All.SendAsync("ReceiveMessage", json,
                 Math.Round(cost, 2).ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void CreateDemandArrays(string[] demands, out List<int[]> demandStorage)
+        {
+            demandStorage = new List<int[]>();
+            for (int i = 0; i < demands.Length; i++)
+            {
+                demandStorage.Add(demands[i].Split(",").Select(int.Parse).ToArray());
+            }
         }
 
         private static void CreateResultArray(Vehicle[] vehicles, List<Coordinate> coordinates,
@@ -78,11 +90,13 @@ namespace TestMapBox.Hubs
             }
         }
 
-        private void CreateCustomers(List<Coordinate> coordinates, Customer[] customers, Random random, int demand)
+        private void CreateCustomers(List<Coordinate> coordinates, Customer[] customers, Random random, List<int[]> demand)
         {
-            for (var i = 0; i < coordinates.Count; i++)
+            customers[0] = new Customer(coordinates[0].lng, coordinates[0].lat);
+
+            for (var i = 1; i < coordinates.Count; i++)
                 customers[i] = new Customer(i, coordinates[i].lng, coordinates[i].lat,
-                    ForecastingDemand.DoubleExponentialSmoothing(ForecastingDemand.GenerateRandomDemand(demand), 0.9,
+                    ForecastingDemand.DoubleExponentialSmoothing(demand[i - 1], 0.9,
                         0.9));
         }
 

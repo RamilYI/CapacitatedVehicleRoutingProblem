@@ -17,6 +17,7 @@ var dmdCounter = 0;
 var tripDirections = {};
 var saveDirections = [];
 var vehiclesCapacity = [];
+var resultFile = [];
 var nav = new mapboxgl.NavigationControl();
 var markerCoords = {};
 var colorArray = [
@@ -52,11 +53,12 @@ document.getElementById("sendButton").addEventListener("click",
         }
         //var vehicle = document.getElementById("vehicleCount").value;
         var vehicle = JSON.stringify(vehiclesCapacity);
-        var maxDemand = document.getElementById("maxDemand").value;
+        //var maxDemand = document.getElementById("maxDemand").value;
         var jsonSend = JSON.stringify(markerCoords).toString();
         var distanceSend = distancies.toString();
+        var demands = JSON.stringify(resultFile);
         //var durationsSend = JSON.stringify(durations);
-        connection.invoke("SendMessage", vehicle, maxDemand, jsonSend, distanceSend).catch(
+        connection.invoke("SendMessage", vehicle, demands, jsonSend, distanceSend).catch(
             function (err) {
                 return console.error(err.toString());
             });
@@ -137,6 +139,45 @@ function genRandomDemand() {
 	    +
     'Максимальное спрос клиентов: </label>' +
     '<input type="number" class="inputClass one" min="0" id="maxDemand" />');
+}
+
+// доделать
+function choiceRealData() {
+	$("#demandModals").append('<div class="modal-body" id="demandPlace"></div>');
+	for (var i = 0; i < Object.keys(markerCoords).length - 1; i++) {
+		$("#demandPlace")
+			.append(
+                '<input type="file" id="input' + i.toString()
+                + '" onChange="SaveFile('+i+');">');
+    }
+	//$("#demandPlace")
+	//	.append('<button type="button" class="btn btn-secondary three" onclick="SaveFile();">Сохранить</button>');
+}
+
+//document.getElementById('input1').addEventListener('change', function(k) {
+//    var file = $('#input1')[0].files[0];
+//    var textType = /text.*/;
+//    var resultFile;
+//    if (file.type.match(textType)) {
+//	    var reader = new FileReader();
+//	    reader.onload = function(e) {
+//		    resultFile = reader.result;
+//	    }
+//	    reader.readAsText(file);
+//    }
+//});
+
+function SaveFile(i) {
+		var file = $('#input' + i.toString())[0].files[0];
+		var textType = /text.*/;
+		if (file.type.match(textType)) {
+			var reader = new FileReader();
+			reader.onload = function(e) {
+                resultFile[i] = reader.result;
+                resultFile[i] = resultFile[i].replace(/(\r\n|\n|\r)/gm, ",");
+			}
+			reader.readAsText(file);
+		}
 }
 
 function AddVehicle() {
@@ -265,6 +306,8 @@ function clearAllLayers() {
      markerMonicker.forEach((m) => m.remove());
      markerMonicker = [];
     }
+    $("#maxDemand").remove();
+    $("#demandPlace").remove();
 }
 
 function saveInstructions() {
