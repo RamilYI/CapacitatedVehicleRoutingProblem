@@ -21,7 +21,15 @@ namespace TestMapBox.Hubs
             var coordinates = new List<Coordinate>();
             JsonProcessing(coordinates, jsonObj);
             var demandArr = JsonConvert.DeserializeObject<string[]>(maxDemand);
-            CreateDemandArrays(demandArr, out demandStorage);
+            try
+            {
+                CreateDemandArrays(demandArr, out demandStorage);
+            }
+            catch (Exception)
+            {
+                await Clients.All.SendAsync("ReceiveMessage","has no demand", 0);
+                return;
+            }
             var customers = new Customer[coordinates.Count];
             var random = new Random();
             CreateCustomers(coordinates, customers, random, demandStorage);
@@ -36,7 +44,8 @@ namespace TestMapBox.Hubs
             }
             catch (Exception)
             {
-                await Clients.All.SendAsync("ReceiveMessage", 0, 0);
+                await Clients.All.SendAsync("ReceiveMessage", "not solved", 0);
+                return;
             }
 
             s.TabuSearch(distanceMatrix);
@@ -45,8 +54,8 @@ namespace TestMapBox.Hubs
             var vehicles = s.GetVehicles();
             CreateResultArray(vehicles, coordinates, coordinatearrays);
             var cost = s.GetCost();
-            var json = JsonConvert.SerializeObject(coordinatearrays);
-            await Clients.All.SendAsync("ReceiveMessage", json,
+            var resultCoords = JsonConvert.SerializeObject(coordinatearrays);
+            await Clients.All.SendAsync("ReceiveMessage", resultCoords,
                 Math.Round(cost, 2).ToString(CultureInfo.InvariantCulture));
         }
 

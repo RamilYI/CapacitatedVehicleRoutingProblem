@@ -4,15 +4,13 @@ var map = new mapboxgl.Map({
     style: 'mapbox://styles/mapbox/streets-v11',
     zoom: 1
 });
-var geocoder = new MapboxGeocoder({
-    accessToken: mapboxgl.accessToken,
-});
 var distancies = [];
 var durations = [];
 var coordsbetweencoords = {};
 var markerCount = 0;
 var clientsCount = 0;
 var vhlCounter = 0;
+var demandCurrent = 0;
 var dmdCounter = 0;
 var tripDirections = {};
 var saveDirections = [];
@@ -44,11 +42,21 @@ document.getElementById("sendButton").disabled = true;
 document.getElementById("sendButton").addEventListener("click",
     function (event) {
         $("#state-legend").empty();
-        if (clientsCount == 0 || vehiclesCapacity.length == 0) {
-            alert("Добавьте клиентов и транспортные средства");
+        if (clientsCount === 0 || vehiclesCapacity.length === 0 || resultFile.length !== Object.keys(markerCoords).length - 1) {
+	        Swal.fire({
+		        type: 'error',
+		        title: 'Oops...',
+		        text: 'Добавьте клиентов, спрос и транспортные средства'
+	        });
+	        //alert("Добавьте клиентов, спрос и транспортные средства");
             return;
         } else if (clientsCount < Math.pow(Object.keys(markerCoords).length - 1, 2)) {
-            alert("Ещё не все клиенты добавлены");
+	        Swal.fire({
+		        type: 'error',
+		        title: 'Oops...',
+                text: 'Ещё не все клиенты добавлены'
+	        });
+            //alert("Ещё не все клиенты добавлены");
             return;
         }
         //var vehicle = document.getElementById("vehicleCount").value;
@@ -133,25 +141,39 @@ function sleep(ms) {
 //	    }
 //    });
 
-function genRandomDemand() {
-    $("#demandModals").append('<div class="modal-body" id="demandPlace"></div>');
-    $("#demandPlace").append('<label style="font-weight: bold;" class="one" id="labelDemand">'
-	    +
-    'Максимальное спрос клиентов: </label>' +
-    '<input type="number" class="inputClass one" min="0" id="maxDemand" />');
-}
+//function genRandomDemand() {
+//    $("#demandModals").append('<div class="modal-body" id="demandPlace"></div>');
+//    $("#demandPlace").append('<label style="font-weight: bold;" class="one" id="labelDemand">'
+//	    +
+//    'Максимальное спрос клиентов: </label>' +
+//    '<input type="number" class="inputClass one" min="0" id="maxDemand" />');
+//}
 
 // доделать
 function choiceRealData() {
+    var iValue = 0;
+    if ($("#input" + (Object.keys(markerCoords).length - 2).toString()).length) return;
+    else if ($("#demandPlace").length) iValue = demandCurrent;
 	$("#demandModals").append('<div class="modal-body" id="demandPlace"></div>');
-	for (var i = 0; i < Object.keys(markerCoords).length - 1; i++) {
+    for (var i = iValue; i < Object.keys(markerCoords).length - 1; i++) {
+	    demandCurrent = Object.keys(markerCoords).length - 1;
 		$("#demandPlace")
-			.append(
-                '<input type="file" id="input' + i.toString()
-                + '" onChange="SaveFile('+i+');">');
+            .append('<label style="style="font-weight: bold;" for="input'+i.toString()+'">'
+				+
+				'v '+ (i+1).toString() +': </label>' +
+                '<input type="file"  id="input' + i.toString()
+            + '" onChange="SaveFile(' + i +');"><br/>');
     }
 	//$("#demandPlace")
 	//	.append('<button type="button" class="btn btn-secondary three" onclick="SaveFile();">Сохранить</button>');
+}
+
+function ClearDemands() {
+	try {
+        $("#demandPlace").remove();
+        choiceRealData();
+	}
+	catch (ex) { }
 }
 
 //document.getElementById('input1').addEventListener('change', function(k) {
@@ -167,17 +189,23 @@ function choiceRealData() {
 //    }
 //});
 
+function SaveDemands() {
+    for (var i = 0; i < Object.keys(markerCoords) - 1; i++) {
+        SaveFile(i);
+    }
+}
+
 function SaveFile(i) {
 		var file = $('#input' + i.toString())[0].files[0];
-		var textType = /text.*/;
-		if (file.type.match(textType)) {
+		//var textType = /text.*/;
+		//if (file.type.match(textType)) {
 			var reader = new FileReader();
 			reader.onload = function(e) {
                 resultFile[i] = reader.result;
                 resultFile[i] = resultFile[i].replace(/(\r\n|\n|\r)/gm, ",");
 			}
 			reader.readAsText(file);
-		}
+		//}
 }
 
 function AddVehicle() {
@@ -196,8 +224,9 @@ function AddVehicle() {
         vhlCounter +
         '" ' +
         ' type="button" onclick="DeleteVehicle();" ' +
-        'class="btn btn-secondary three">Удалить</button><br/><br/>');
+        'class="btn btn-secondary three">Удалить</button><br/></br>');
 }
+
 
 function DeleteVehicle() {
     var idVehicle = event.currentTarget.id.toString();
@@ -213,7 +242,19 @@ function ClearVehicles() {
 }
 
 function SaveVehicles() {
+	var re = "[eE+-]";
     for (var i = 0; i < vhlCounter; i++) {
+        if (document.getElementById("maxVehicle" + (i + 1).toString()).value.match(re) !== null
+            || document.getElementById("maxVehicle" + (i + 1).toString()).value === "") {
+            //alert("Введите числовые значения вместимости");
+            Swal.fire({
+	            type: 'error',
+	            title: 'Oops...',
+                text: 'Введите числовые значения вместимости'
+            });
+            document.getElementById("maxVehicle" + (i + 1).toString()).value = "";
+            return;
+        }
         vehiclesCapacity[i] = document.getElementById("maxVehicle" + (i + 1).toString()).value;
     }
 }
@@ -248,7 +289,10 @@ function getMatch(e, q, v) {
         tripDirections[markerCoords[e].lng.toString() + markerCoords[q].lng.toString()] =
             getInstructions(jsonResponse.routes[0], q);
         clientsCount++;
-        if (clientsCount === Math.pow(Object.keys(markerCoords).length - 1, 2)) alert("Клиенты добавлены");
+        if (clientsCount === Math.pow(Object.keys(markerCoords).length - 1, 2)) {
+	        //alert("Клиенты добавлены");
+	        Swal.fire('Клиенты добавлены');
+        }
     };
     req.send();
 }
@@ -277,14 +321,9 @@ function getInstructions(data, q) {
     for (var i = 0; i < legs.length; i++) {
         var steps = legs[i].steps;
         for (var j = 0; j < steps.length; j++) {
-            directions.push("Step " + (stepCount + 1).toString() + ":" + steps[j].maneuver.instruction + "\n");
+            directions.push(steps[j].maneuver.instruction + "\n");
             stepCount++;
         }
-        directions.push("Вы добрались до (" +
-            markerCoords[q].lng.toString() +
-            ";" +
-            markerCoords[q].lat.toString() +
-            ") точки.\n");
     }
     return directions;
 }
@@ -308,6 +347,8 @@ function clearAllLayers() {
     }
     $("#maxDemand").remove();
     $("#demandPlace").remove();
+    demandCurrent = 0;
+    resultFile.length = 0;
 }
 
 function saveInstructions() {
@@ -332,27 +373,48 @@ function saveInstructions() {
 
 connection.on("ReceiveMessage",
     function (jsonResult, cost) {
-        if (jsonResult === 0) {
-            alert("Введите больше транспортных средств либо увеличьте вместимость имеющихся");
+        if (jsonResult === "not solved") {
+            //alert("Введите больше транспортных средств либо увеличьте вместимость имеющихся");
+            Swal.fire({
+	            type: 'error',
+	            title: 'Oops...',
+                text: 'Введите больше транспортных средств либо увеличьте вместимость имеющихся'
+            });
             return;
         }
+        if (jsonResult === "has no demand") {
+            //alert("Некорректные данные для спроса");
+            Swal.fire({
+	            type: 'error',
+	            title: 'Oops...',
+                text: 'Некорректные данные для спроса'
+            });
+            return;
+        }
+        var stringOrder = [];
         clearLayers();
         layerNames = [coordinates.length];
         coordinates = JSON.parse(jsonResult);
         for (var i = 0; i < coordinates.length; i++) {
             var buf = new Array();
             var resultCoordCount = 0;
-            var routeOrder = 0;
+            //var routeOrder = 0;
+            stringOrder[i] = "";
             for (var k = 0; k < coordinates[i].length - 2; k += 2) {
                 buf[resultCoordCount] = [coordinates[i][k], coordinates[i][k + 1]];
-                routeOrder++;
+                var coordCount =
+	                coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
+                        .length;
+                if (coordCount <= 2) continue;
+                //routeOrder++;
                 var idMarker = coordinates[i][k];
-                var searchCoincidence = document.getElementById(idMarker.toString()).innerText.search(":");
-                if (searchCoincidence !== -1)
-                    document.getElementById(idMarker.toString()).innerText =
-	                    document.getElementById(idMarker.toString()).innerText.substring(0,
-		                document.getElementById(idMarker.toString()).innerText.match(":").index);
-                document.getElementById(idMarker.toString()).innerText += ": " + routeOrder;
+                stringOrder[i] += document.getElementById(idMarker.toString()).textContent.toString() + "->";
+                //var searchCoincidence = document.getElementById(idMarker.toString()).innerText.search(":");
+                //if (searchCoincidence !== -1)
+                //    document.getElementById(idMarker.toString()).textContent =
+	               //     document.getElementById(idMarker.toString()).innerText.substring(0,
+		              //  document.getElementById(idMarker.toString()).innerText.match(":").index);
+                //document.getElementById(idMarker.toString()).textContent += ": " + routeOrder;
                 //var el = document.createElement('div');
                 //el.className = 'marker';
                 //el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + routeOrder + '</b></span>';
@@ -361,9 +423,7 @@ connection.on("ReceiveMessage",
                 //marker.push(
                 //    new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));
                 resultCoordCount++;
-                var coordCount =
-                    coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
-                        .length;
+                
                 for (var z = 0; z < coordCount; z++) {
                     buf[resultCoordCount] =
                         coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()]
@@ -371,6 +431,7 @@ connection.on("ReceiveMessage",
                     resultCoordCount += 1;
                 }
             }
+            stringOrder[i] += "Депо";
             layerNames[i] = i;
             map.addLayer({
                 "id": layerNames[i].toString(),
@@ -392,14 +453,14 @@ connection.on("ReceiveMessage",
                 },
                 "paint": {
                     "line-color": colorArray[i],
-                    "line-width": 8
+                    "line-width": 5
                 }
             });
             $("#state-legend").css('visibility', 'visible');
             $("#state-legend").append("<div id='legend" + i + 1 + "'><span style='background-color: " +
                 colorArray[i] +
                 "'></span>Vehicle " +
-                (i + 1).toString() +
+                (i + 1).toString() +": " + stringOrder[i] +
                 "</div>");
             //console.log(buf);
         }
@@ -421,7 +482,6 @@ placesAutocomplete.on('change',
     });
 
 map.addControl(nav, 'bottom-right');
-
 map.on('load',
     () => {
         map.on('click',
@@ -432,10 +492,10 @@ map.on('load',
                 markerName.className = 'marker';
                 if (markerCount === 0) {
                     markerDraw = new window.mapboxgl.Marker({ color: 'red' }).setLngLat(e.lngLat).addTo(map);
-                    markerName.innerHTML = '<span id="' + e.lngLat.lng + '" style=" font-size: 130%; background: inherit;"><b>Депо</b></span>';
+                    markerName.innerHTML = '<span id="' + e.lngLat.lng + '" style=" font-size: 135%; font-weight:bold; background: inherit;"><b>Депо</b></span>';
                 } else {
                     markerDraw = new window.mapboxgl.Marker().setLngLat(e.lngLat).addTo(map);
-                    markerName.innerHTML = '<span id="' + e.lngLat.lng + '" style="font-size: 130%; background: inherit;"><b>v'+ markerCount + '</b></span>';
+                    markerName.innerHTML = '<span id="' + e.lngLat.lng + '" style="font-size: 135%;font-weight:bold; background: inherit;"><b>v'+ markerCount + '</b></span>';
                 }
                 markerName.fontSize = "large";
                 coordMarkers.push(markerDraw);

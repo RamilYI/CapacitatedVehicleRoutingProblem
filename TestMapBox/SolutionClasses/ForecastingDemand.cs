@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TestMapBox.HelperClasses
+namespace TestMapBox.SolutionClasses
 {
     // возможно, будут дополнения
     public static class ForecastingDemand
