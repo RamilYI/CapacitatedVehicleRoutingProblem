@@ -3,12 +3,45 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+    <ApplicationIcon>wwwroot\favicon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Remove="web.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="dotnet-aspnet-codegenerator-design.dll" />
+    <None Remove="GeoJSON.Net.dll" />
+    <None Remove="Microsoft.CodeAnalysis.CSharp.Workspaces.dll" />
+    <None Remove="Microsoft.CodeAnalysis.Workspaces.dll" />
+    <None Remove="Microsoft.VisualStudio.Web.CodeGeneration.Contracts.dll" />
+    <None Remove="Microsoft.VisualStudio.Web.CodeGeneration.Core.dll" />
+    <None Remove="Microsoft.VisualStudio.Web.CodeGeneration.dll" />
+    <None Remove="Microsoft.VisualStudio.Web.CodeGeneration.EntityFrameworkCore.dll" />
+    <None Remove="Microsoft.VisualStudio.Web.CodeGeneration.Templating.dll" />
+    <None Remove="Microsoft.VisualStudio.Web.CodeGeneration.Utils.dll" />
+    <None Remove="Microsoft.VisualStudio.Web.CodeGenerators.Mvc.dll" />
+    <None Remove="Microsoft.Web.Infrastructure.dll" />
+    <None Remove="Newtonsoft.Json.dll" />
+    <None Remove="NuGet.Frameworks.dll" />
+    <None Remove="System.Composition.AttributedModel.dll" />
+    <None Remove="System.Composition.Convention.dll" />
+    <None Remove="System.Composition.Hosting.dll" />
+    <None Remove="System.Composition.Runtime.dll" />
+    <None Remove="System.Composition.TypedParts.dll" />
+    <None Remove="System.Web.Helpers.dll" />
+    <None Remove="System.Web.Mvc.dll" />
+    <None Remove="System.Web.Razor.dll" />
+    <None Remove="System.Web.WebPages.Deployment.dll" />
+    <None Remove="System.Web.WebPages.dll" />
+    <None Remove="System.Web.WebPages.Razor.dll" />
+    <None Remove="TestMapBox.xml" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="bootstrap" Version="4.3.1" />

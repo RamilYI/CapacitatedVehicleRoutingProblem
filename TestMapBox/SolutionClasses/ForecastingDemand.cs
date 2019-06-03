@@ -42,7 +42,8 @@ namespace TestMapBox.SolutionClasses
 
             }
 
-            return (int)Math.Ceiling(result.Last());
+            return (int)Math.Ceiling(result.Last()) > 0 ? (int)Math.Ceiling(result.Last())
+               : 0;
         }
     }
 }

@@ -31,6 +31,7 @@ var colorArray = [
     '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'
 ];
 var coordinates = [];
+var forecastDem = [];
 var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 var marker = [];
 var requireCount = 0;
@@ -166,6 +167,16 @@ function choiceRealData() {
     }
 	//$("#demandPlace")
 	//	.append('<button type="button" class="btn btn-secondary three" onclick="SaveFile();">Сохранить</button>');
+}
+
+function openforecastCommand() {
+	$("#demandForecastingPlace").remove();
+    $("#forecastDemands").append('<div class="modal-body" id="demandForecastingPlace"></div>');
+    for (var i = 0; i < Object.keys(markerCoords).length - 1; i++) {
+	    $("#demandForecastingPlace").append('<label style="style="font-weight: bold;">v' +
+		    + (i + 1).toString() +
+		    ': ' + forecastDem[i].toString() + '</label><br/>');
+    }
 }
 
 function ClearDemands() {
@@ -340,7 +351,7 @@ function clearAllLayers() {
     document.getElementById("Cost").textContent = "";
     ClearVehicles();
     $("div#state-legend").empty();
-    $("dib#state-legend").css('visibility', 'hidden');
+    $("dib#state-legend").css('display', 'none');
     if (markerMonicker.length > 0) {
      markerMonicker.forEach((m) => m.remove());
      markerMonicker = [];
@@ -349,6 +360,8 @@ function clearAllLayers() {
     $("#demandPlace").remove();
     demandCurrent = 0;
     resultFile.length = 0;
+    $("#demandForecastingPlace").remove();
+    $("#demandModal").css('display', 'none');
 }
 
 function saveInstructions() {
@@ -372,7 +385,7 @@ function saveInstructions() {
 }
 
 connection.on("ReceiveMessage",
-    function (jsonResult, cost) {
+    function (jsonResult, cost, forecastingDemands) {
         if (jsonResult === "not solved") {
             //alert("Введите больше транспортных средств либо увеличьте вместимость имеющихся");
             Swal.fire({
@@ -391,10 +404,12 @@ connection.on("ReceiveMessage",
             });
             return;
         }
+        $("#forecastDemandButton").css('display', 'block');
         var stringOrder = [];
         clearLayers();
         layerNames = [coordinates.length];
         coordinates = JSON.parse(jsonResult);
+        forecastDem = JSON.parse(forecastingDemands);
         for (var i = 0; i < coordinates.length; i++) {
             var buf = new Array();
             var resultCoordCount = 0;
@@ -456,7 +471,7 @@ connection.on("ReceiveMessage",
                     "line-width": 5
                 }
             });
-            $("#state-legend").css('visibility', 'visible');
+            $("#state-legend").css('display', 'block');
             $("#state-legend").append("<div id='legend" + i + 1 + "'><span style='background-color: " +
                 colorArray[i] +
                 "'></span>Vehicle " +

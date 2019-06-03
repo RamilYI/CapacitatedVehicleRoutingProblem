@@ -34,6 +34,8 @@
             Загрузить спрос клиентов
         </button>
         <br /><br />
+        <button type="button" id="forecastDemandButton" class="btn btn-primary" style="display: none" data-toggle="modal" data-target="#demandModal" onclick="openforecastCommand();" >Вывести прогнозируемый спрос</button>
+        <br /><br />
         <input type="button" class="form-submit-button" value="Расчёт" id="sendButton" />
 
         <br /><br />
@@ -41,6 +43,7 @@
         <br /><br />
         <input type="button" class="form-submit-button" value="Сохранить инструкции" onclick="saveInstructions();" />
         <br /><br />
+
         <label id="Cost"></label>
     </div>
 
@@ -64,26 +67,40 @@
         </div>
     </div>
 
-    <div class="modal fade" id="clientModal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div id="demandModals" class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="clientModalLabel">Добавление спроса клиентам</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
+<div class="modal fade" id="clientModal" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div id="demandModals" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clientModalLabel">Добавление спроса клиентам</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
 
-                <div class="modal-footer">
-                    <button type="button" onclick="ClearDemands();" class="btn btn-primary">Очистить список</button>
-                    <button type="button" onclick="SaveDemands();" data-dismiss="modal" class="btn btn-secondary">Сохранить</button>
-                </div>
+            <div class="modal-footer">
+                <button type="button" onclick="ClearDemands();" class="btn btn-primary">Очистить список</button>
+                <button type="button" onclick="SaveDemands();" data-dismiss="modal" class="btn btn-secondary">Сохранить</button>
             </div>
         </div>
     </div>
+</div>
+
+<div class="modal fade" id="demandModal" tabindex="-1" role="dialog" aria-labelledby="demandModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div id="forecastDemands" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clientModalLabel">Прогнозируемый спрос</h5>
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
-    <div id="state-legend" style="visibility: hidden" class="legend">
+<div id="state-legend" style="display: none" class="legend">
     </div>
 
     <script src="https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.js"></script>
