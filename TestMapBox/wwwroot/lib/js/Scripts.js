@@ -261,7 +261,7 @@ function clearAllLayers() {
     document.getElementById("Cost").textContent = "";
     ClearVehicles();
     $("div#state-legend").empty();
-    $("dib#state-legend").css('display', 'none');
+    $("div#state-legend").css('display', 'none');
     if (markerMonicker.length > 0) {
      markerMonicker.forEach((m) => m.remove());
      markerMonicker = [];
@@ -271,7 +271,7 @@ function clearAllLayers() {
     demandCurrent = 0;
     resultFile.length = 0;
     $("#demandForecastingPlace").remove();
-    $("#demandModal").css('display', 'none');
+    $("#forecastDemandButton").css('display', 'none');
 }
 
 function saveInstructions() {
@@ -341,6 +341,7 @@ connection.on("ReceiveMessage",
             }
             stringOrder[i] += "Депо";
             layerNames[i] = i;
+
             map.addLayer({
                 "id": layerNames[i].toString(),
                 "type": "line",
@@ -378,13 +379,13 @@ connection.on("ReceiveMessage",
 
 var placesAutocomplete = places({
     container: document.querySelector('#address-input'),
-    type: 'city'
+    type: 'address'
 });
 placesAutocomplete.on('change',
     e => {
         map.flyTo({
             center: [e.suggestion.latlng.lng, e.suggestion.latlng.lat],
-            zoom: 9
+            zoom: 18
         });
     });
 

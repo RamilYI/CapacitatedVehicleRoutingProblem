@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
-using TestMapBox.HelperClasses;
 using TestMapBox.Models;
 using TestMapBox.SolutionClasses;
 
