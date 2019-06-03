@@ -49,7 +49,6 @@ document.getElementById("sendButton").addEventListener("click",
 		        title: 'Oops...',
 		        text: 'Добавьте клиентов, спрос и транспортные средства'
 	        });
-	        //alert("Добавьте клиентов, спрос и транспортные средства");
             return;
         } else if (clientsCount < Math.pow(Object.keys(markerCoords).length - 1, 2)) {
 	        Swal.fire({
@@ -57,16 +56,12 @@ document.getElementById("sendButton").addEventListener("click",
 		        title: 'Oops...',
                 text: 'Ещё не все клиенты добавлены'
 	        });
-            //alert("Ещё не все клиенты добавлены");
             return;
         }
-        //var vehicle = document.getElementById("vehicleCount").value;
         var vehicle = JSON.stringify(vehiclesCapacity);
-        //var maxDemand = document.getElementById("maxDemand").value;
         var jsonSend = JSON.stringify(markerCoords).toString();
         var distanceSend = distancies.toString();
         var demands = JSON.stringify(resultFile);
-        //var durationsSend = JSON.stringify(durations);
         connection.invoke("SendMessage", vehicle, demands, jsonSend, distanceSend).catch(
             function (err) {
                 return console.error(err.toString());
@@ -74,43 +69,11 @@ document.getElementById("sendButton").addEventListener("click",
         event.preventDefault();
     });
 
-// пока без экселя, потом допилю
-//document.getElementById("fileInput").addEventListener('change', () => {
-//    this.parseExcel = function(file) {
-//        var reader = new FileReader();
-
-//        reader.onload = function(e) {
-//            data = e.target.result();
-//            var workbook = XLSX.read(data, {
-//                type: 'binary'
-//            });
-
-//            workbook.SheetNames.forEach(function(sheetName) {
-//                // Here is your object
-//                var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
-//                var json_object = JSON.stringify(XL_row_object);
-//                console.log(json_object);
-
-//            });
-
-//        };
-
-//        reader.onerror = function(ex) {
-//            console.log(ex);
-//        };
-
-//        reader.readAsBinaryString(file);
-//    };
-//});
-
 async function getMatchAll() {
     clientsCount = 0;
     for (var i = 0; i < Object.keys(markerCoords).length; i++) {
         for (var j = 0; j < Object.keys(markerCoords).length; j++) {
             var v = i * Object.keys(markerCoords).length + j;
-            //if (v > 300) setTimeout(getMatch(i, j, v), 12000);
-            //else if (v > 100) setTimeout(getMatch(i, j, v), 6000);
-            //else getMatch(i, j, v);
             requireCount++;
             if (requireCount >= 299) {
                 await sleep(60000);
@@ -125,32 +88,6 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-//$('#clientModal').on('show.bs.modal',
-//    function (e) {
-//	    for (var i = 0; i < clientsCount; i++) {
-//		    $("#demandModals").append('<div class="modal-body" id="demandPlace"></div>');
-//		    dmdCounter++;
-//		    $("#demandPlace").append('<label style="font-weight: bold;" class="one" id="label' +
-//			    dmdCounter +
-//			    '" ' +
-//			    '>' +
-//			    dmdCounter +
-//			    '. Спрос клиента: </label>' +
-//			    '<input type="file" id="fileInput' +
-//			    dmdCounter +
-//			    '" />');
-//	    }
-//    });
-
-//function genRandomDemand() {
-//    $("#demandModals").append('<div class="modal-body" id="demandPlace"></div>');
-//    $("#demandPlace").append('<label style="font-weight: bold;" class="one" id="labelDemand">'
-//	    +
-//    'Максимальное спрос клиентов: </label>' +
-//    '<input type="number" class="inputClass one" min="0" id="maxDemand" />');
-//}
-
-// доделать
 function choiceRealData() {
     var iValue = 0;
     if ($("#input" + (Object.keys(markerCoords).length - 2).toString()).length) return;
@@ -165,8 +102,6 @@ function choiceRealData() {
                 '<input type="file"  id="input' + i.toString()
             + '" onChange="SaveFile(' + i +');"><br/>');
     }
-	//$("#demandPlace")
-	//	.append('<button type="button" class="btn btn-secondary three" onclick="SaveFile();">Сохранить</button>');
 }
 
 function openforecastCommand() {
@@ -187,19 +122,6 @@ function ClearDemands() {
 	catch (ex) { }
 }
 
-//document.getElementById('input1').addEventListener('change', function(k) {
-//    var file = $('#input1')[0].files[0];
-//    var textType = /text.*/;
-//    var resultFile;
-//    if (file.type.match(textType)) {
-//	    var reader = new FileReader();
-//	    reader.onload = function(e) {
-//		    resultFile = reader.result;
-//	    }
-//	    reader.readAsText(file);
-//    }
-//});
-
 function SaveDemands() {
     for (var i = 0; i < Object.keys(markerCoords) - 1; i++) {
         SaveFile(i);
@@ -208,15 +130,12 @@ function SaveDemands() {
 
 function SaveFile(i) {
 		var file = $('#input' + i.toString())[0].files[0];
-		//var textType = /text.*/;
-		//if (file.type.match(textType)) {
 			var reader = new FileReader();
 			reader.onload = function(e) {
                 resultFile[i] = reader.result;
                 resultFile[i] = resultFile[i].replace(/(\r\n|\n|\r)/gm, ",");
 			}
 			reader.readAsText(file);
-		//}
 }
 
 function AddVehicle() {
@@ -257,7 +176,6 @@ function SaveVehicles() {
     for (var i = 0; i < vhlCounter; i++) {
         if (document.getElementById("maxVehicle" + (i + 1).toString()).value.match(re) !== null
             || document.getElementById("maxVehicle" + (i + 1).toString()).value === "") {
-            //alert("Введите числовые значения вместимости");
             Swal.fire({
 	            type: 'error',
 	            title: 'Oops...',
@@ -281,27 +199,19 @@ function getMatch(e, q, v) {
         markerCoords[q].lat +
         '?geometries=geojson&steps=true&access_token=' +
         mapboxgl.accessToken;
-    //console.log(url);
     var req = new XMLHttpRequest();
     req.responseType = 'json';
     req.open('GET', url, true);
     req.onload = function () {
         var jsonResponse = req.response;
         var distance = jsonResponse.routes[0].distance * 0.001;
-        //var duration = jsonResponse.routes[0].duration / 60;
         var coords = jsonResponse.routes[0].geometry;
-        //console.log(steps);
-        //console.log(coords);
-        //console.log(distance);
-        //console.log(duration);
         distancies[v] = distance;
-        //durations[v] = duration;
         coordsbetweencoords[markerCoords[e].lng.toString() + markerCoords[q].lng.toString()] = coords;
         tripDirections[markerCoords[e].lng.toString() + markerCoords[q].lng.toString()] =
             getInstructions(jsonResponse.routes[0], q);
         clientsCount++;
         if (clientsCount === Math.pow(Object.keys(markerCoords).length - 1, 2)) {
-	        //alert("Клиенты добавлены");
 	        Swal.fire('Клиенты добавлены');
         }
     };
@@ -387,7 +297,6 @@ function saveInstructions() {
 connection.on("ReceiveMessage",
     function (jsonResult, cost, forecastingDemands) {
         if (jsonResult === "not solved") {
-            //alert("Введите больше транспортных средств либо увеличьте вместимость имеющихся");
             Swal.fire({
 	            type: 'error',
 	            title: 'Oops...',
@@ -396,7 +305,6 @@ connection.on("ReceiveMessage",
             return;
         }
         if (jsonResult === "has no demand") {
-            //alert("Некорректные данные для спроса");
             Swal.fire({
 	            type: 'error',
 	            title: 'Oops...',
@@ -413,7 +321,6 @@ connection.on("ReceiveMessage",
         for (var i = 0; i < coordinates.length; i++) {
             var buf = new Array();
             var resultCoordCount = 0;
-            //var routeOrder = 0;
             stringOrder[i] = "";
             for (var k = 0; k < coordinates[i].length - 2; k += 2) {
                 buf[resultCoordCount] = [coordinates[i][k], coordinates[i][k + 1]];
@@ -421,22 +328,8 @@ connection.on("ReceiveMessage",
 	                coordsbetweencoords[coordinates[i][k].toString() + coordinates[i][k + 2].toString()].coordinates
                         .length;
                 if (coordCount <= 2) continue;
-                //routeOrder++;
                 var idMarker = coordinates[i][k];
                 stringOrder[i] += document.getElementById(idMarker.toString()).textContent.toString() + "->";
-                //var searchCoincidence = document.getElementById(idMarker.toString()).innerText.search(":");
-                //if (searchCoincidence !== -1)
-                //    document.getElementById(idMarker.toString()).textContent =
-	               //     document.getElementById(idMarker.toString()).innerText.substring(0,
-		              //  document.getElementById(idMarker.toString()).innerText.match(":").index);
-                //document.getElementById(idMarker.toString()).textContent += ": " + routeOrder;
-                //var el = document.createElement('div');
-                //el.className = 'marker';
-                //el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + routeOrder + '</b></span>';
-                //el.fontSize = "large";
-                //markerMonicker[coordinates[i][k].toString()] += ": " + routeOrder;
-                //marker.push(
-                //    new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));
                 resultCoordCount++;
                 
                 for (var z = 0; z < coordCount; z++) {
@@ -477,7 +370,6 @@ connection.on("ReceiveMessage",
                 "'></span>Vehicle " +
                 (i + 1).toString() +": " + stringOrder[i] +
                 "</div>");
-            //console.log(buf);
         }
         document.getElementById("Cost").textContent = "Стоимость маршрута: " + cost + "км";
         document.getElementById("Cost").style.backgroundColor = "#5181b8";
@@ -520,9 +412,3 @@ map.on('load',
                 markerCount++;
             });
     });
-//var el = document.createElement('div');
-//                el.className = 'marker';
-//el.innerHTML = '<span style="font-size: 250%; background: inherit;"><b>' + routeOrder + '</b></span>';
-//el.fontSize = "large";
-//marker.push(
-//	new mapboxgl.Marker(el).setLngLat([coordinates[i][k], coordinates[i][k + 1]]).addTo(map));
