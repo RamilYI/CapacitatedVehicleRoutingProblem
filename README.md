@@ -33,4 +33,4 @@
 
 ![пример оптимального маршрута](https://github.com/RamilYI/CapacitatedVehicleRoutingProblem/blob/master/TestMapBox/screenshot/routes.PNG)
 
-![добавление ТС](https://github.com/RamilYI/CapacitatedVehicleRoutingProblem/blob/master/TestMapBox/screenshot/addVehicles.PNG)
+![добавление ТС](https://github.com/RamilYI/CapacitatedVehicleRoutingProblem/blob/master/TestMapBox/screenshot/forecasting.PNG)
