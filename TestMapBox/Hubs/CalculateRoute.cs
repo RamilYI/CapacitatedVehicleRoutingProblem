@@ -18,7 +18,6 @@ namespace TestMapBox.Hubs
         {
             List<int[]> demandStorage;
             var coordinates = new List<Coordinate>();
-            int[] forecastingDemands;
             JsonProcessing(coordinates, jsonObj);
             var demandArr = JsonConvert.DeserializeObject<string[]>(maxDemand);
             try
@@ -27,12 +26,13 @@ namespace TestMapBox.Hubs
             }
             catch (Exception)
             {
-                await Clients.All.SendAsync("ReceiveMessage","has no demand", 0);
+                await Clients.All.SendAsync("ReceiveMessage", "has no demand", 0);
                 return;
             }
+
             var customers = new Customer[coordinates.Count];
-            var random = new Random();
-            CreateCustomers(coordinates, customers, random, demandStorage, out forecastingDemands);
+            new Random();
+            CreateCustomers(coordinates, customers, demandStorage, out int[] forecastingDemands);
             var vehicleArr = JsonConvert.DeserializeObject<int[]>(vehicle);
             var s = new Solution(coordinates.Count, vehicleArr.Length, vehicleArr);
             var distanceMatrix = new decimal[coordinates.Count, coordinates.Count];
@@ -63,10 +63,8 @@ namespace TestMapBox.Hubs
         private static void CreateDemandArrays(string[] demands, out List<int[]> demandStorage)
         {
             demandStorage = new List<int[]>();
-            for (int i = 0; i < demands.Length; i++)
-            {
+            for (var i = 0; i < demands.Length; i++)
                 demandStorage.Add(demands[i].Split(",").Select(int.Parse).ToArray());
-            }
         }
 
         private static void CreateResultArray(Vehicle[] vehicles, List<Coordinate> coordinates,
@@ -100,7 +98,8 @@ namespace TestMapBox.Hubs
             }
         }
 
-        private void CreateCustomers(List<Coordinate> coordinates, Customer[] customers, Random random, List<int[]> demand, out int[] forecastingDemands)
+        private void CreateCustomers(List<Coordinate> coordinates, Customer[] customers,
+            List<int[]> demand, out int[] forecastingDemands)
         {
             customers[0] = new Customer(coordinates[0].lng, coordinates[0].lat);
             forecastingDemands = new int[coordinates.Count - 1];

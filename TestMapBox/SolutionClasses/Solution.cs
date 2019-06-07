@@ -12,6 +12,12 @@ namespace TestMapBox.SolutionClasses
         private readonly int NoOfCustomers;
         private Vehicle[] Vehicles;
         private decimal Cost;
+        private DateTime? start { get; set; }
+        private DateTime? end { get; set; }
+
+        private TimeSpan? greedyTime;
+
+        private TimeSpan? tabuTime;
 
         private decimal greedySolCost;
 
@@ -62,6 +68,7 @@ namespace TestMapBox.SolutionClasses
 
         public void GreedySolution(Customer[] customers, decimal[,] distanceMatrix)
         {
+            start = DateTime.Now;
             decimal endCost;
             var vehicleIndex = 0;
 
@@ -116,10 +123,12 @@ namespace TestMapBox.SolutionClasses
             Vehicles[vehicleIndex].AddNode(customers[0]);
             Cost += endCost;
             greedySolCost = Cost;
+            greedyTime =  DateTime.Now - start;
         }
 
         public void TabuSearch(decimal[,] distanceMatrix)
         {
+            start = DateTime.Now;
             List<Customer> RouteFrom;
             List<Customer> RouteTo;
 
@@ -259,6 +268,7 @@ namespace TestMapBox.SolutionClasses
 
             if (neightboor) Vehicles = vehiclesForBestSolution;
             Cost = BestSolutionCost;
+            tabuTime =    DateTime.Now - start;
         }
 
         public void SaveBestSolution()
@@ -298,7 +308,10 @@ namespace TestMapBox.SolutionClasses
                 }
 
             text.Append("\n\n\nTabuSearch Cost " + Cost + "\n");
+            text.Append("tabuTime: " + tabuTime + "\n");
             text.Append("\n\n\nGreedy Cost " + greedySolCost + "\n");
+            text.Append("greedy TIme: " + greedyTime + "\n");
+
             using (var outputFile =
                 new StreamWriter(Path.Combine(KnownFolders.GetPath(KnownFolder.Downloads), "Results.txt")))
             {

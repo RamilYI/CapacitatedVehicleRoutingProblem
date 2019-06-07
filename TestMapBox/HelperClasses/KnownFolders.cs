@@ -5,7 +5,7 @@ namespace TestMapBox.HelperClasses
 {
     public static class KnownFolders
     {
-        private static string[] _knownFolderGuids = new string[]
+        private static readonly string[] _knownFolderGuids = new string[]
         {
         "{56784854-C6CB-462B-8169-88E350ACB882}", // Contacts
         "{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}", // Desktop
