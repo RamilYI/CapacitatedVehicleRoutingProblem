@@ -195,8 +195,11 @@ function SaveVehicles() {
 		ClearVehicles();
 		return;
 	}
-	const re = "[eE+-]";
-	for (let i = 0; i < vhlCounter; i++) {
+    const re = "[eE+-]";
+    var buf = 0;
+    for (let i = 0; i < vhlCounter; i++) {
+	    if (!$('#maxVehicle' + (i + 1).toString()).length) continue;
+
 		if (document.getElementById(`maxVehicle${(i + 1).toString()}`).value.match(re) !== null ||
 			document.getElementById(`maxVehicle${(i + 1).toString()}`).value === "") {
 			Swal.fire({
@@ -206,8 +209,9 @@ function SaveVehicles() {
 			});
 			document.getElementById(`maxVehicle${(i + 1).toString()}`).value = "";
 			return;
-		}
-		vehiclesCapacity[i] = document.getElementById(`maxVehicle${(i + 1).toString()}`).value;
+        }
+        vehiclesCapacity[buf] = document.getElementById(`maxVehicle${(i + 1).toString()}`).value;
+        buf++;
 	}
 }
 
@@ -230,7 +234,6 @@ function getMatch(e, q, v) {
 			getInstructions(jsonResponse.routes[0], q);
 		clientsCount++;
         if (clientsCount === Math.pow(Object.keys(markerCoords).length - 1, 2)) {
-	        alert((Date.now() - start)/1000);
 			Swal.fire("Клиенты добавлены");
 		}
 	};
